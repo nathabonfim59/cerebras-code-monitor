@@ -82,6 +82,9 @@ You can also authenticate using a Cerebras API key, though this method has limit
 - Cannot switch organizations
 - Less accurate for token prediction calculations
 - Minute-level data is not available
+- Each request "wastes" approximately 5 tokens as metadata is extracted from response headers
+- Requires longer monitoring intervals to minimize token consumption
+- Provides less precise monitoring compared to session token authentication
 
 To use API key authentication:
 1. Get your API key from the Cerebras dashboard

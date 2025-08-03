@@ -7,6 +7,7 @@
 - Run single test: `go test -run TestName ./path/to/package`
 - Lint: `golangci-lint run`
 - Format: `go fmt ./...`
+- Format changed files: `gofmt -w FILE` (except non-Go files)
 
 ## Code Style Guidelines
 - Use descriptive variable names in camelCase

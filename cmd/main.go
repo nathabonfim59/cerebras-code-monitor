@@ -44,19 +44,58 @@ func init() {
 	rootCmd.PersistentFlags().BoolP("version", "v", false, "Show version information")
 
 	// Bind flags to viper
-	viper.BindPFlag("session-token", rootCmd.PersistentFlags().Lookup("session-token"))
-	viper.BindPFlag("org-id", rootCmd.PersistentFlags().Lookup("org-id"))
-	viper.BindPFlag("model", rootCmd.PersistentFlags().Lookup("model"))
-	viper.BindPFlag("refresh-rate", rootCmd.PersistentFlags().Lookup("refresh-rate"))
-	viper.BindPFlag("refresh-per-second", rootCmd.PersistentFlags().Lookup("refresh-per-second"))
-	viper.BindPFlag("timezone", rootCmd.PersistentFlags().Lookup("timezone"))
-	viper.BindPFlag("time-format", rootCmd.PersistentFlags().Lookup("time-format"))
-	viper.BindPFlag("theme", rootCmd.PersistentFlags().Lookup("theme"))
-	viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level"))
-	viper.BindPFlag("log-file", rootCmd.PersistentFlags().Lookup("log-file"))
-	viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
-	viper.BindPFlag("clear", rootCmd.PersistentFlags().Lookup("clear"))
-	viper.BindPFlag("version", rootCmd.PersistentFlags().Lookup("version"))
+	err := viper.BindPFlag("session-token", rootCmd.PersistentFlags().Lookup("session-token"))
+	if err != nil {
+		fmt.Printf("Error binding session-token flag: %v\n", err)
+	}
+	err = viper.BindPFlag("org-id", rootCmd.PersistentFlags().Lookup("org-id"))
+	if err != nil {
+		fmt.Printf("Error binding org-id flag: %v\n", err)
+	}
+	err = viper.BindPFlag("model", rootCmd.PersistentFlags().Lookup("model"))
+	if err != nil {
+		fmt.Printf("Error binding model flag: %v\n", err)
+	}
+	err = viper.BindPFlag("refresh-rate", rootCmd.PersistentFlags().Lookup("refresh-rate"))
+	if err != nil {
+		fmt.Printf("Error binding refresh-rate flag: %v\n", err)
+	}
+	err = viper.BindPFlag("refresh-per-second", rootCmd.PersistentFlags().Lookup("refresh-per-second"))
+	if err != nil {
+		fmt.Printf("Error binding refresh-per-second flag: %v\n", err)
+	}
+	err = viper.BindPFlag("timezone", rootCmd.PersistentFlags().Lookup("timezone"))
+	if err != nil {
+		fmt.Printf("Error binding timezone flag: %v\n", err)
+	}
+	err = viper.BindPFlag("time-format", rootCmd.PersistentFlags().Lookup("time-format"))
+	if err != nil {
+		fmt.Printf("Error binding time-format flag: %v\n", err)
+	}
+	err = viper.BindPFlag("theme", rootCmd.PersistentFlags().Lookup("theme"))
+	if err != nil {
+		fmt.Printf("Error binding theme flag: %v\n", err)
+	}
+	err = viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level"))
+	if err != nil {
+		fmt.Printf("Error binding log-level flag: %v\n", err)
+	}
+	err = viper.BindPFlag("log-file", rootCmd.PersistentFlags().Lookup("log-file"))
+	if err != nil {
+		fmt.Printf("Error binding log-file flag: %v\n", err)
+	}
+	err = viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
+	if err != nil {
+		fmt.Printf("Error binding debug flag: %v\n", err)
+	}
+	err = viper.BindPFlag("clear", rootCmd.PersistentFlags().Lookup("clear"))
+	if err != nil {
+		fmt.Printf("Error binding clear flag: %v\n", err)
+	}
+	err = viper.BindPFlag("version", rootCmd.PersistentFlags().Lookup("version"))
+	if err != nil {
+		fmt.Printf("Error binding version flag: %v\n", err)
+	}
 
 	// Set environment variable support
 	viper.SetEnvPrefix("CEREBRAS")
