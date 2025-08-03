@@ -5,6 +5,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/nathabonfim59/cerebras-code-monitor/internal/cerebras"
 	"github.com/nathabonfim59/cerebras-code-monitor/internal/config"
 )
@@ -110,14 +111,20 @@ func (m DashboardModel) View() string {
 	}
 
 	icons := config.GetIcons()
-	s := fmt.Sprintf("%s Cerebras Code Monitor Dashboard\n\n", icons.Dashboard)
 
-	// Render tabs
+	// Apply primary color styling to the dashboard title
+	titleStyle := lipgloss.NewStyle().Foreground(primaryColor).Bold(true)
+	s := titleStyle.Render(fmt.Sprintf("%s Cerebras Code Monitor Dashboard\n\n", icons.Dashboard))
+
+	// Render tabs with primary color styling
+	tabStyle := lipgloss.NewStyle().Foreground(primaryColor)
+	activeTabStyle := lipgloss.NewStyle().Foreground(primaryColor).Bold(true)
+
 	for i, tab := range m.tabs {
 		if m.activeTab == i {
-			s += fmt.Sprintf("> %s <", tab)
+			s += activeTabStyle.Render(fmt.Sprintf("> %s <", tab))
 		} else {
-			s += fmt.Sprintf("  %s  ", tab)
+			s += tabStyle.Render(fmt.Sprintf("  %s  ", tab))
 		}
 		if i < len(m.tabs)-1 {
 			s += " | "
