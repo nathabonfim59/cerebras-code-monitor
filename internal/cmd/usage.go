@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/nathabonfim59/cerebras-code-monitor/internal/cerebras"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -32,10 +33,23 @@ var getUsageCmd = &cobra.Command{
 			return
 		}
 
+		// Create Cerebras client
+		client := cerebras.NewClient()
+		if !client.HasAuth() {
+			fmt.Println("Error: No authentication method configured. Please login first.")
+			return
+		}
+
 		fmt.Printf("Getting usage statistics for organization %s...\n", organization)
 		// TODO: Implement usage tracking logic
 		// This would make a request to the Cerebras GraphQL endpoint
 		// and extract rate limit information from response headers
+		metrics, err := client.GetMetrics(organization)
+		if err != nil {
+			fmt.Printf("Error fetching metrics: %v\n", err)
+			return
+		}
+		_ = metrics
 	},
 }
 
@@ -55,6 +69,13 @@ var monitorUsageCmd = &cobra.Command{
 
 		// Get refresh rate from configuration/viper
 		refreshRate := viper.GetInt("refresh-rate")
+
+		// Create Cerebras client
+		client := cerebras.NewClient()
+		if !client.HasAuth() {
+			fmt.Println("Error: No authentication method configured. Please login first.")
+			return
+		}
 
 		fmt.Printf("Starting real-time monitoring for organization %s (model: %s, refresh: %ds)...\n", organization, model, refreshRate)
 		// TODO: Implement real-time monitoring logic
