@@ -68,6 +68,7 @@ func init() {
 	viper.AddConfigPath("$HOME/.cerebras-monitor")
 
 	// Add subcommands
+	rootCmd.AddCommand(cmd.LoginCmd)
 	rootCmd.AddCommand(cmd.OrganizationsCmd)
 	rootCmd.AddCommand(cmd.QuotasCmd)
 	rootCmd.AddCommand(cmd.UsageCmd)
