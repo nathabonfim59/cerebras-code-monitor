@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/nathabonfim59/cerebras-code-monitor/internal/cmd"
+	"github.com/nathabonfim59/cerebras-code-monitor/internal/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -61,11 +62,15 @@ func init() {
 	viper.SetEnvPrefix("CEREBRAS")
 	viper.AutomaticEnv()
 
-	// Set config file
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
-	viper.AddConfigPath("$HOME/.cerebras-monitor")
+	// Set config file using XDG conventions
+	config.SetupViper()
+
+	// Try to read config file
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			fmt.Printf("Error reading config file: %v\n", err)
+		}
+	}
 
 	// Add subcommands
 	rootCmd.AddCommand(cmd.LoginCmd)

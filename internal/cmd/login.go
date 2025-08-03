@@ -3,7 +3,9 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/nathabonfim59/cerebras-code-monitor/internal/config"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var LoginCmd = &cobra.Command{
@@ -23,8 +25,19 @@ from the Cerebras platform. The tool is open source and you can inspect the code
 	Run: func(cmd *cobra.Command, args []string) {
 		cookieValue := args[0]
 		fmt.Printf("Logging in with cookie: %s\n", cookieValue)
-		// TODO: Implement login with cookie logic
-		// This would validate the cookie and save it to configuration
+
+		// Save the cookie to configuration
+		viper.Set("session-token", cookieValue)
+		err := viper.WriteConfig()
+		if err != nil {
+			// If config file doesn't exist, create it
+			err = viper.SafeWriteConfig()
+			if err != nil {
+				fmt.Printf("Error saving configuration: %v\n", err)
+				return
+			}
+		}
+		fmt.Println("Session cookie saved successfully!")
 	},
 }
 
@@ -33,8 +46,16 @@ var logoutCmd = &cobra.Command{
 	Short: "Logout from Cerebras platform",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Logging out...")
-		// TODO: Implement logout logic
-		// This would clear the saved cookie from configuration
+
+		// Clear the saved authentication from configuration
+		viper.Set("session-token", "")
+		viper.Set("api-key", "")
+		err := viper.WriteConfig()
+		if err != nil {
+			fmt.Printf("Error clearing configuration: %v\n", err)
+			return
+		}
+		fmt.Println("Authentication cleared successfully!")
 	},
 }
 
@@ -49,13 +70,25 @@ Note that API key authentication has limitations:
 - Minute-level data is not available
 
 You can either specify the API key as an environment variable CEREBRAS_API_KEY or use this command
-to save it to your local database at XDG/.config/cerebras-monitor/settings.json`,
+to save it to your local database at ` + "`" + config.GetConfigPath() + "`" + `,
+which follows XDG conventions.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		apiKeyValue := args[0]
 		fmt.Printf("Logging in with API key: %s\n", apiKeyValue)
-		// TODO: Implement login with API key logic
-		// This would validate the API key and save it to configuration
+
+		// Save the API key to configuration
+		viper.Set("api-key", apiKeyValue)
+		err := viper.WriteConfig()
+		if err != nil {
+			// If config file doesn't exist, create it
+			err = viper.SafeWriteConfig()
+			if err != nil {
+				fmt.Printf("Error saving configuration: %v\n", err)
+				return
+			}
+		}
+		fmt.Println("API key saved successfully!")
 	},
 }
 
