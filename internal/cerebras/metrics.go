@@ -3,7 +3,6 @@ package cerebras
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -107,37 +106,39 @@ func (c *Client) getMetricsWithAPIKey() (*RateLimitInfo, error) {
 	// Parse rate limit headers regardless of status code
 	rateLimitInfo := &RateLimitInfo{}
 	if limit := resp.Header.Get("X-Ratelimit-Limit-Requests-Day"); limit != "" {
-		if val, err := strconv.ParseInt(limit, 10, 64); err == nil {
-			rateLimitInfo.LimitRequestsDay = val
+		if _, err := fmt.Sscanf(limit, "%d", &rateLimitInfo.LimitRequestsDay); err != nil {
+			rateLimitInfo.LimitRequestsDay = 0
 		}
 	}
 
 	if limit := resp.Header.Get("X-Ratelimit-Limit-Tokens-Minute"); limit != "" {
-		if val, err := strconv.ParseInt(limit, 10, 64); err == nil {
-			rateLimitInfo.LimitTokensMinute = val
+		if _, err := fmt.Sscanf(limit, "%d", &rateLimitInfo.LimitTokensMinute); err != nil {
+			rateLimitInfo.LimitTokensMinute = 0
 		}
 	}
 
 	if remaining := resp.Header.Get("X-Ratelimit-Remaining-Requests-Day"); remaining != "" {
-		if val, err := strconv.ParseInt(remaining, 10, 64); err == nil {
-			rateLimitInfo.RemainingRequestsDay = val
+		if _, err := fmt.Sscanf(remaining, "%d", &rateLimitInfo.RemainingRequestsDay); err != nil {
+			rateLimitInfo.RemainingRequestsDay = 0
 		}
 	}
 
 	if remaining := resp.Header.Get("X-Ratelimit-Remaining-Tokens-Minute"); remaining != "" {
-		if val, err := strconv.ParseInt(remaining, 10, 64); err == nil {
-			rateLimitInfo.RemainingTokensMinute = val
+		if _, err := fmt.Sscanf(remaining, "%d", &rateLimitInfo.RemainingTokensMinute); err != nil {
+			rateLimitInfo.RemainingTokensMinute = 0
 		}
 	}
 
 	if reset := resp.Header.Get("X-Ratelimit-Reset-Requests-Day"); reset != "" {
-		if val, err := strconv.ParseFloat(reset, 64); err == nil {
+		var val float64
+		if _, err := fmt.Sscanf(reset, "%f", &val); err == nil {
 			rateLimitInfo.ResetRequestsDay = int64(val)
 		}
 	}
 
 	if reset := resp.Header.Get("X-Ratelimit-Reset-Tokens-Minute"); reset != "" {
-		if val, err := strconv.ParseFloat(reset, 64); err == nil {
+		var val float64
+		if _, err := fmt.Sscanf(reset, "%f", &val); err == nil {
 			rateLimitInfo.ResetTokensMinute = int64(val)
 		}
 	}

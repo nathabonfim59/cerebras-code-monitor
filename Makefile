@@ -39,6 +39,11 @@ lint:
 fmt:
 	go fmt ./...
 
+# Format uncommitted Go files
+.PHONY: fmt-uncommitted
+fmt-uncommitted:
+	gofmt -w $$(git diff --name-only --diff-filter=ACMR | grep '\.go$$' | xargs)
+
 # Clean build artifacts
 .PHONY: clean
 clean:
@@ -64,14 +69,15 @@ install: build
 .PHONY: help
 help:
 	@echo "Available targets:"
-	@echo "  all          - Build the monitor (default)"
-	@echo "  build        - Build the monitor"
-	@echo "  deps         - Install dependencies"
-	@echo "  test         - Run tests"
+	@echo "  all           - Build the monitor (default)"
+	@echo "  build         - Build the monitor"
+	@echo "  deps          - Install dependencies"
+	@echo "  test          - Run tests"
 	@echo "  test-coverage - Run tests with coverage"
-	@echo "  lint         - Lint the project"
-	@echo "  fmt          - Format the code"
-	@echo "  clean        - Clean build artifacts"
-	@echo "  build-all    - Build for multiple platforms"
-	@echo "  install      - Install the binary"
-	@echo "  help         - Show this help message"
+	@echo "  lint          - Lint the project"
+	@echo "  fmt           - Format the code"
+	@echo "  fmt-uncommitted - Format uncommitted Go files"
+	@echo "  clean         - Clean build artifacts"
+	@echo "  build-all     - Build for multiple platforms"
+	@echo "  install       - Install the binary"
+	@echo "  help          - Show this help message"
