@@ -1,0 +1,13 @@
+# Default configuration for cerebras-code-monitor
+session-token: ""
+org-id: ""
+model: "llama3.1-8b"
+refresh-rate: 10
+refresh-per-second: 0.75
+timezone: "auto"
+time-format: "auto"
+theme: "auto"
+log-level: "INFO"
+log-file: ""
+debug: false
+clear: false
