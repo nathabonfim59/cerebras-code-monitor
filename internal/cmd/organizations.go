@@ -93,8 +93,8 @@ var OrganizationsCmd = &cobra.Command{
 }
 
 var listOrganizationsCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List available organizations",
+	Use:   "details",
+	Short: "List details of available organizations",
 	Run: func(cmd *cobra.Command, args []string) {
 		debug, _ := cmd.Flags().GetBool("debug")
 		fmt.Println("Listing organizations...")
