@@ -94,7 +94,7 @@ To use API key authentication:
    cerebras-monitor login apikey your-api-key-here
    ```
 
-This will save the API key to your local database at XDG/.config/cerebras-monitor/settings.json
+This will save the API key to your local database at `$XDG_CONFIG_HOME/cerebras-monitor/settings.yaml` (typically `~/.config/cerebras-monitor/settings.yaml`)
 
 ### Basic Commands
 
@@ -112,7 +112,7 @@ cerebras-monitor --refresh-rate 5
 |-----------|------|---------|-------------|
 | --session-token | string | "" | Cerebras session token (can be set via environment variable) |
 | --org-id | string | "" | Organization ID to monitor |
-| --model | string | "llama3.1-8b" | Model to monitor |
+| --model | string | "qwen-3-coder-480b" | Model to monitor |
 | --refresh-rate | int | 10 | Data refresh rate in seconds (1-60) |
 | --refresh-per-second | float | 0.75 | Display refresh rate in Hz (0.1-20.0) |
 | --timezone | string | auto | Timezone (auto-detected) |

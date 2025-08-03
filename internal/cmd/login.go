@@ -71,7 +71,7 @@ Note that API key authentication has limitations:
 
 You can either specify the API key as an environment variable CEREBRAS_API_KEY or use this command
 to save it to your local database at ` + "`" + config.GetConfigPath() + "`" + `,
-which follows XDG conventions.`,
+which follows XDG conventions and uses YAML format.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		apiKeyValue := args[0]

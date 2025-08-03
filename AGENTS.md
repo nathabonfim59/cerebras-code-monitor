@@ -31,4 +31,5 @@
 ## File Structure
 - cmd/main.go: entry point
 - internal/cmd/: command implementations
+- internal/config/: XDG configuration handling
 - config.yaml: default configuration

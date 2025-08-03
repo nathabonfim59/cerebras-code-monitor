@@ -31,10 +31,10 @@ func init() {
 	// Configuration flags
 	rootCmd.PersistentFlags().String("session-token", "", "Cerebras session token (can be set via environment variable)")
 	rootCmd.PersistentFlags().String("org-id", "", "Organization ID to monitor")
-	rootCmd.PersistentFlags().String("model", "llama3.1-8b", "Model to monitor")
+	rootCmd.PersistentFlags().String("model", "qwen-3-coder-480b", "Model to monitor")
 	rootCmd.PersistentFlags().Int("refresh-rate", 10, "Data refresh rate in seconds (1-60)")
 	rootCmd.PersistentFlags().Float64("refresh-per-second", 0.75, "Display refresh rate in Hz (0.1-20.0)")
-	rootCmd.PersistentFlags().String("timezone", "auto", "Timezone (auto-detected)")
+	rootCmd.PersistentFlags().String("timezone", config.GetUserTimezone(), "Timezone (auto-detected)")
 	rootCmd.PersistentFlags().String("time-format", "auto", "Time format: 12h, 24h, or auto")
 	rootCmd.PersistentFlags().String("theme", "auto", "Display theme: light, dark, or auto")
 	rootCmd.PersistentFlags().String("log-level", "INFO", "Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL")
