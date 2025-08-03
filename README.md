@@ -150,10 +150,20 @@ Built with Go using spf13 libraries:
 - github.com/cli/browser
 - github.com/cli/oauth
 - github.com/cli/safeexec
+- sqlc (https://sqlc.dev) - required for database query generation
 
 ### Building
 
+Before building, ensure you have sqlc installed:
+
 ```bash
+# Install sqlc
+go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+
+# Generate database code
+sqlc generate
+
+# Build the application
 go build -o cerebras-monitor main.go
 ```
 
