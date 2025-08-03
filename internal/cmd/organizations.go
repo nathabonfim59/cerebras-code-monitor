@@ -9,6 +9,7 @@ import (
 	"github.com/nathabonfim59/cerebras-code-monitor/internal/cerebras"
 	"github.com/nathabonfim59/cerebras-code-monitor/internal/cerebras/graphql"
 	"github.com/nathabonfim59/cerebras-code-monitor/internal/config"
+	"github.com/nathabonfim59/cerebras-code-monitor/internal/tui"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -89,7 +90,8 @@ var OrganizationsCmd = &cobra.Command{
 		}
 
 		// Use bubbletea to create an interactive selection interface
-		p := tea.NewProgram(initialListModel(response.Data.ListMyOrganizations))
+		model := tui.NewOrganizationListModel(response.Data.ListMyOrganizations)
+		p := tea.NewProgram(model)
 		if _, err := p.Run(); err != nil {
 			fmt.Printf("Error running selection interface: %v\n", err)
 			return
@@ -242,7 +244,7 @@ var selectOrganizationCmd = &cobra.Command{
 		}
 
 		// Use bubbletea to create an interactive selection interface
-		p := tea.NewProgram(initialListModel(response.Data.ListMyOrganizations))
+		p := tea.NewProgram(tui.NewOrganizationListModel(response.Data.ListMyOrganizations))
 		if _, err := p.Run(); err != nil {
 			fmt.Printf("Error running selection interface: %v\n", err)
 			return
@@ -255,83 +257,4 @@ func init() {
 	OrganizationsCmd.Flags().String("id", "", "Organization ID to set for monitoring without TUI")
 	OrganizationsCmd.AddCommand(listOrganizationsCmd)
 	OrganizationsCmd.AddCommand(selectOrganizationCmd)
-}
-
-// Bubbletea model for organization selection
-type listModel struct {
-	organizations []cerebras.Organization
-	cursor        int
-	selected      map[int]struct{}
-}
-
-func initialListModel(orgs []cerebras.Organization) listModel {
-	return listModel{
-		organizations: orgs,
-		selected:      make(map[int]struct{}),
-	}
-}
-
-func (m listModel) Init() tea.Cmd {
-	// Just return `nil`, which means "no I/O right now, please."
-	return nil
-}
-
-func (m listModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "q":
-			return m, tea.Quit
-		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
-			}
-		case "down", "j":
-			if m.cursor < len(m.organizations)-1 {
-				m.cursor++
-			}
-		case "enter", " ":
-			// Select the organization
-			org := m.organizations[m.cursor]
-
-			// Save the organization ID to configuration
-			viper.Set("org-id", org.ID)
-			if err := viper.WriteConfig(); err != nil {
-				// If config file doesn't exist, create it
-				if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-					configDir := config.GetConfigDir()
-					configPath := filepath.Join(configDir, "settings.yaml")
-					if err := viper.WriteConfigAs(configPath); err != nil {
-						fmt.Printf("Error saving configuration: %v\n", err)
-						return m, tea.Quit
-					}
-				} else {
-					fmt.Printf("Error saving configuration: %v\n", err)
-					return m, tea.Quit
-				}
-			}
-
-			fmt.Printf("Organization %s selected and saved to configuration.\n", org.Name)
-			return m, tea.Quit
-		}
-	}
-
-	return m, nil
-}
-
-func (m listModel) View() string {
-	s := "Select an organization:\n\n"
-
-	for i, org := range m.organizations {
-		cursor := " "
-		if m.cursor == i {
-			cursor = ">"
-		}
-
-		s += fmt.Sprintf("%s %s (ID: %s)\n", cursor, org.Name, org.ID)
-	}
-
-	s += "\nPress 'enter' or 'space' to select an organization, 'q' to quit.\n"
-
-	return s
 }
