@@ -51,10 +51,18 @@ func (c *Client) MakeRequest(query string, variables map[string]interface{}) ([]
 	return c.MakeRequestWithOperationName("", query, variables)
 }
 
+// ValidateAuth checks if the client has proper authentication for GraphQL requests
+func (c *Client) ValidateAuth() error {
+	if c.sessionToken == "" {
+		return fmt.Errorf("GraphQL requests require session token authentication")
+	}
+	return nil
+}
+
 // MakeRequestWithOperationName makes a GraphQL request with an operation name
 func (c *Client) MakeRequestWithOperationName(operationName, query string, variables map[string]interface{}) ([]byte, error) {
-	if c.sessionToken == "" {
-		return nil, fmt.Errorf("GraphQL requests require session token authentication")
+	if err := c.ValidateAuth(); err != nil {
+		return nil, err
 	}
 
 	// Create request body
@@ -106,7 +114,9 @@ func (c *Client) MakeRequestWithOperationName(operationName, query string, varia
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	// Read response body
 	body, err := io.ReadAll(resp.Body)
