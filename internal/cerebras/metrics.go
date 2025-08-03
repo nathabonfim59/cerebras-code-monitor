@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
+
+	"github.com/spf13/viper"
 )
 
 // Metrics represents usage metrics from Cerebras
@@ -23,11 +26,12 @@ func (c *Client) GetMetrics(organization string) (*Metrics, error) {
 	}
 
 	// Determine which authentication method to use
-	if c.sessionToken != "" {
-		return c.getMetricsWithSessionToken(organization)
-	} else if c.apiKey != "" {
+	// Prioritize API key over session token
+	if c.apiKey != "" {
 		// API key doesn't need organization parameter
 		return c.getMetricsWithAPIKey()
+	} else if c.sessionToken != "" {
+		return c.getMetricsWithSessionToken(organization)
 	}
 
 	return nil, fmt.Errorf("no valid authentication method found")
@@ -56,9 +60,17 @@ func (c *Client) getMetricsWithSessionToken(organization string) (*Metrics, erro
 
 // getMetricsWithAPIKey fetches metrics using REST API with API key auth
 func (c *Client) getMetricsWithAPIKey() (*Metrics, error) {
-	// Make a simple API call to get the rate limit headers
+	// Make a chat completion request to get rate limit headers
 	url := fmt.Sprintf("%s/v1/chat/completions", c.baseURL)
-	req, err := http.NewRequest("POST", url, nil)
+
+	// Create a minimal request body that should work
+	body := `{
+		"model": "llama3.1-8b",
+		"messages": [{"role": "user", "content": "hello"}],
+		"max_completion_tokens": 1
+	}`
+
+	req, err := http.NewRequest("POST", url, strings.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
@@ -69,6 +81,9 @@ func (c *Client) getMetricsWithAPIKey() (*Metrics, error) {
 		req.Header.Set(key, value)
 	}
 
+	// Add content type header
+	req.Header.Set("Content-Type", "application/json")
+
 	// Execute request
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -76,43 +91,61 @@ func (c *Client) getMetricsWithAPIKey() (*Metrics, error) {
 	}
 	defer resp.Body.Close()
 
-	// Parse rate limit headers
-	metrics := &Metrics{}
+	// Debug: print all headers if debug flag is set
+	if viper.GetBool("debug") {
+		fmt.Printf("Response Headers:\n")
+		for key, values := range resp.Header {
+			for _, value := range values {
+				fmt.Printf("  %s: %s\n", key, value)
+			}
+		}
+	}
 
-	if limit := resp.Header.Get("x-ratelimit-limit-requests-day"); limit != "" {
+	// Parse rate limit headers regardless of status code
+	metrics := &Metrics{}
+	if limit := resp.Header.Get("X-Ratelimit-Limit-Requests-Day"); limit != "" {
 		if val, err := strconv.ParseInt(limit, 10, 64); err == nil {
 			metrics.LimitRequestsDay = val
 		}
 	}
 
-	if limit := resp.Header.Get("x-ratelimit-limit-tokens-minute"); limit != "" {
+	if limit := resp.Header.Get("X-Ratelimit-Limit-Tokens-Minute"); limit != "" {
 		if val, err := strconv.ParseInt(limit, 10, 64); err == nil {
 			metrics.LimitTokensMinute = val
 		}
 	}
 
-	if remaining := resp.Header.Get("x-ratelimit-remaining-requests-day"); remaining != "" {
+	if remaining := resp.Header.Get("X-Ratelimit-Remaining-Requests-Day"); remaining != "" {
 		if val, err := strconv.ParseInt(remaining, 10, 64); err == nil {
 			metrics.RemainingRequestsDay = val
 		}
 	}
 
-	if remaining := resp.Header.Get("x-ratelimit-remaining-tokens-minute"); remaining != "" {
+	if remaining := resp.Header.Get("X-Ratelimit-Remaining-Tokens-Minute"); remaining != "" {
 		if val, err := strconv.ParseInt(remaining, 10, 64); err == nil {
 			metrics.RemainingTokensMinute = val
 		}
 	}
 
-	if reset := resp.Header.Get("x-ratelimit-reset-requests-day"); reset != "" {
-		if val, err := strconv.ParseInt(reset, 10, 64); err == nil {
-			metrics.ResetRequestsDay = val
+	if reset := resp.Header.Get("X-Ratelimit-Reset-Requests-Day"); reset != "" {
+		if val, err := strconv.ParseFloat(reset, 64); err == nil {
+			metrics.ResetRequestsDay = int64(val)
 		}
 	}
 
-	if reset := resp.Header.Get("x-ratelimit-reset-tokens-minute"); reset != "" {
-		if val, err := strconv.ParseInt(reset, 10, 64); err == nil {
-			metrics.ResetTokensMinute = val
+	if reset := resp.Header.Get("X-Ratelimit-Reset-Tokens-Minute"); reset != "" {
+		if val, err := strconv.ParseFloat(reset, 64); err == nil {
+			metrics.ResetTokensMinute = int64(val)
 		}
+	}
+	// If we got rate limit headers, return the metrics even if the request failed
+	if metrics.LimitRequestsDay > 0 || metrics.LimitTokensMinute > 0 || metrics.RemainingRequestsDay > 0 || metrics.RemainingTokensMinute > 0 {
+		return metrics, nil
+	}
+
+	// Otherwise, return an error
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API request failed with status code: %d", resp.StatusCode)
 	}
 
 	return metrics, nil

@@ -47,6 +47,16 @@ func (c *Client) HasAuth() bool {
 	return c.apiKey != "" || c.sessionToken != ""
 }
 
+// SessionToken returns the session token
+func (c *Client) SessionToken() string {
+	return c.sessionToken
+}
+
+// APIKey returns the API key
+func (c *Client) APIKey() string {
+	return c.apiKey
+}
+
 // getAuthHeaders returns the appropriate headers for authentication
 func (c *Client) getAuthHeaders() map[string]string {
 	headers := make(map[string]string)
