@@ -28,23 +28,23 @@ func (c *Client) GetMetrics(organization string) (*RateLimitInfo, error) {
 
 // getMetricsWithSessionToken fetches metrics using GraphQL with session token auth
 func (c *Client) getMetricsWithSessionToken(organization string) (*RateLimitInfo, error) {
-	// TODO: Implement GraphQL request to fetch metrics
-	// Use c.sessionToken for authentication
+	// Make GraphQL request to get organization usage
+	query := `{"operationName":"GetModelDefaultParams","variables":{"id":"qwen-3-coder-480b","orgId":"org_p5kc84hmnffthd4d9rhv6n44"},"query":"query GetModelDefaultParams($id: String!, $orgId: String!) {\n  GetModelDefaultParams(id: $id, orgId: $orgId) {\n    modelId\n    stream\n    temperature\n    topP\n    maxCompletionTokens\n    systemMessage\n    maxTokensToSend\n    firstPrompt\n    secondPrompt\n    thirdPrompt\n    thinkingModel\n    reasoningEffort\n    startThinkTag\n    endThinkTag\n    __typename\n  }\n}"}`
 
-	url := fmt.Sprintf("%s/graphql", c.baseURL)
-	req, err := http.NewRequest("POST", url, nil)
+	variables := map[string]interface{}{
+		"organizationId": organization,
+	}
+
+	responseBody, err := c.MakeGraphQLRequest(query, variables)
 	if err != nil {
 		return nil, err
 	}
 
-	// Add authentication headers
-	headers := c.getAuthHeaders()
-	for key, value := range headers {
-		req.Header.Set(key, value)
-	}
+	// For now, just return the raw response body
+	// In a future implementation, we would parse this JSON response
+	fmt.Printf("GraphQL Response: %s\n", string(responseBody))
 
-	// TODO: Execute request and parse response
-	// For now, return empty quota
+	// Return empty quota for now (as per existing behavior)
 	return &RateLimitInfo{}, nil
 }
 
