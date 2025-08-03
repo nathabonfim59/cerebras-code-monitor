@@ -76,6 +76,18 @@ func (c *Client) getAuthHeaders() map[string]string {
 	return headers
 }
 
+// getGraphQLAuthHeaders returns headers specifically for GraphQL requests
+func (c *Client) getGraphQLAuthHeaders() map[string]string {
+	headers := make(map[string]string)
+
+	// GraphQL requests require session token authentication
+	if c.sessionToken != "" {
+		headers["Cookie"] = fmt.Sprintf("authjs.session-token=%s", c.sessionToken)
+	}
+
+	return headers
+}
+
 // MakeGraphQLRequest makes a GraphQL request to the Cerebras API
 func (c *Client) MakeGraphQLRequest(query string, variables map[string]interface{}) ([]byte, error) {
 	return c.MakeGraphQLRequestWithDebug(query, variables, false)
@@ -119,8 +131,8 @@ func (c *Client) MakeGraphQLRequestWithOperationName(operationName, query string
 		return nil, err
 	}
 
-	// Add authentication headers
-	headers := c.getAuthHeaders()
+	// Add authentication headers (GraphQL requests require session token)
+	headers := c.getGraphQLAuthHeaders()
 	for key, value := range headers {
 		req.Header.Set(key, value)
 	}

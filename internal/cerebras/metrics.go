@@ -16,12 +16,23 @@ func (c *Client) GetMetrics(organization string) (*RateLimitInfo, error) {
 	}
 
 	// Determine which authentication method to use
-	// Prioritize API key over session token
-	if c.apiKey != "" {
+	// API key auth only works with REST API requests
+	if c.apiKey != "" && c.sessionToken == "" {
 		// API key doesn't need organization parameter
 		return c.getMetricsWithAPIKey()
-	} else if c.sessionToken != "" {
+	}
+
+	// Session token auth only works with GraphQL requests
+	if c.sessionToken != "" && c.apiKey == "" {
 		return c.getMetricsWithSessionToken(organization)
+	}
+
+	// When both auth methods are available, prioritize based on intended usage
+	// For now, we'll prioritize session token for GraphQL usage
+	if c.sessionToken != "" {
+		return c.getMetricsWithSessionToken(organization)
+	} else if c.apiKey != "" {
+		return c.getMetricsWithAPIKey()
 	}
 
 	return nil, fmt.Errorf("no valid authentication method found")
