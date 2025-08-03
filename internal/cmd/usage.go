@@ -59,22 +59,26 @@ var getUsageCmd = &cobra.Command{
 			orgID = "unknown"
 		}
 
-		usageMetrics := metrics.ToUsageMetrics(orgID, "unknown")
+		// Get model from viper config or use default
+		model := viper.GetString("model")
+		if model == "" {
+			model = "qwen-3-coder-480b"
+		}
+
+		usageMetrics := metrics.ToUsageMetrics(orgID, model)
 		quota := metrics.ToQuota()
 
 		// Display usage metrics
 		fmt.Printf("Usage Metrics:\n")
 		fmt.Printf("  Organization ID: %s\n", usageMetrics.OrganizationID)
 		fmt.Printf("  Model Name: %s\n", usageMetrics.ModelName)
-		fmt.Printf("  Tokens Used: %d\n", usageMetrics.TokensUsed)
-		fmt.Printf("  Tokens Limit: %d\n", usageMetrics.TokensLimit)
-		fmt.Printf("  Requests Used: %d\n", usageMetrics.RequestsUsed)
-		fmt.Printf("  Requests Limit: %d\n", usageMetrics.RequestsLimit)
+		fmt.Printf("  Tokens Used: %d/%d\n", usageMetrics.TokensUsed, usageMetrics.TokensLimit)
+		fmt.Printf("  Requests Used: %d/%d\n", usageMetrics.RequestsUsed, usageMetrics.RequestsLimit)
 
 		// Display quota information
 		fmt.Printf("\nQuota Information:\n")
-		fmt.Printf("  Limit: %d\n", quota.Limit)
-		fmt.Printf("  Remaining: %d\n", quota.Remaining)
+		fmt.Printf("  Request Limit: %d\n", quota.Limit)
+		fmt.Printf("  Requests Remaining: %d\n", quota.Remaining)
 		fmt.Printf("  Reset Time: %s\n", quota.ResetTime)
 	},
 }

@@ -17,10 +17,16 @@ type RateLimitInfo struct {
 // ToQuota converts RateLimitInfo to Quota
 func (r *RateLimitInfo) ToQuota() *Quota {
 	// Converting requests per day quota
+	resetTime := "Unknown"
+	if r.ResetRequestsDay > 0 {
+		// The reset time is a relative timestamp in seconds from now
+		resetTime = time.Now().Add(time.Duration(r.ResetRequestsDay) * time.Second).Format(time.RFC3339)
+	}
+
 	return &Quota{
 		Limit:     r.LimitRequestsDay,
 		Remaining: r.RemainingRequestsDay,
-		ResetTime: time.Unix(r.ResetRequestsDay, 0).Format(time.RFC3339),
+		ResetTime: resetTime,
 	}
 }
 

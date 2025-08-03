@@ -54,12 +54,18 @@ func (c *Client) getMetricsWithAPIKey() (*RateLimitInfo, error) {
 	// Make a chat completion request to get rate limit headers
 	url := fmt.Sprintf("%s/v1/chat/completions", c.baseURL)
 
+	// Get model from viper config or use default
+	model := viper.GetString("model")
+	if model == "" {
+		model = "qwen-3-coder-480b"
+	}
+
 	// Create a minimal request body that should work
-	body := `{
-		"model": "llama3.1-8b",
+	body := fmt.Sprintf(`{
+		"model": "%s",
 		"messages": [{"role": "user", "content": "hello"}],
 		"max_completion_tokens": 1
-	}`
+	}`, model)
 
 	req, err := http.NewRequest("POST", url, strings.NewReader(body))
 	if err != nil {
