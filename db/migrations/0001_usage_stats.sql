@@ -21,11 +21,7 @@ CREATE TABLE usage_snapshots (
     
     -- Metadata
     data_source TEXT NOT NULL,         -- 'api_key' or 'session'
-    is_complete BOOLEAN DEFAULT 0,     -- 1 if all fields populated
-    
-    -- Indexes for queries
-    INDEX idx_org_model_time (organization_id, model_name, timestamp),
-    INDEX idx_timestamp (timestamp)
+    is_complete BOOLEAN DEFAULT 0      -- 1 if all fields populated
 );
 
 CREATE TABLE usage_metrics (
@@ -51,9 +47,7 @@ CREATE TABLE usage_metrics (
     -- Sample counts
     snapshot_count INTEGER,            -- Number of snapshots in window
     
-    UNIQUE(organization_id, model_name, time_window, timestamp),
-    INDEX idx_org_model_window (organization_id, model_name, time_window),
-    INDEX idx_timestamp_window (timestamp, time_window)
+    UNIQUE(organization_id, model_name, time_window, timestamp)
 );
 
 CREATE TABLE baseline_averages (
@@ -76,8 +70,7 @@ CREATE TABLE baseline_averages (
     last_updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     period_days INTEGER DEFAULT 7,     -- Rolling window size in days
     
-    UNIQUE(organization_id, model_name, time_window, period_days),
-    INDEX idx_org_model (organization_id, model_name)
+    UNIQUE(organization_id, model_name, time_window, period_days)
 );
 
 CREATE TABLE alerts (
@@ -96,17 +89,14 @@ CREATE TABLE alerts (
     
     -- Status
     acknowledged BOOLEAN DEFAULT 0,
-    acknowledged_at DATETIME,
-    
-    INDEX idx_timestamp (timestamp),
-    INDEX idx_org_unack (organization_id, acknowledged)
+    acknowledged_at DATETIME
 );
 
 -- Additional indexes for performance
-CREATE INDEX idx_snapshots_time ON usage_snapshots(timestamp DESC);
-CREATE INDEX idx_snapshots_org_model ON usage_snapshots(organization_id, model_name, timestamp DESC);
-CREATE INDEX idx_metrics_window ON usage_metrics(time_window, timestamp DESC);
-CREATE INDEX idx_alerts_unack ON alerts(organization_id, acknowledged, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_snapshots_time ON usage_snapshots(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_snapshots_org_model ON usage_snapshots(organization_id, model_name, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_metrics_window ON usage_metrics(time_window, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_alerts_unack ON alerts(organization_id, acknowledged, timestamp DESC);
 
 -- Initialize baseline averages with defaults
 INSERT INTO baseline_averages (
