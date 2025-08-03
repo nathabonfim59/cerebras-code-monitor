@@ -8,6 +8,7 @@ import (
 
 	"github.com/amacneil/dbmate/v2/pkg/dbmate"
 	_ "github.com/amacneil/dbmate/v2/pkg/driver/sqlite"
+	"github.com/nathabonfim59/cerebras-code-monitor/buildtags"
 	dbfiles "github.com/nathabonfim59/cerebras-code-monitor/db"
 )
 
@@ -38,9 +39,16 @@ func GetDBMate() (*dbmate.DB, error) {
 	db.FS = dbfiles.MigrationFiles
 	db.MigrationsDir = []string{"migrations"}
 
-	// Set schema file path
+	// Set schema file path based on build type
 	schemaDir := filepath.Dir(dbPath)
+
+	// When built with -tags prod, the ProdBuild constant will be true
+	// We need to use this to generate the queries for dbmx
 	db.SchemaFile = filepath.Join(schemaDir, "schema.sql")
+	if !buildtags.ProdBuild {
+		// For source builds, store schema in db directory
+		db.SchemaFile = filepath.Join("db", "schema.sql")
+	}
 
 	return db, nil
 }
