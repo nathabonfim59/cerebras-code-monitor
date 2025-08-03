@@ -129,6 +129,7 @@ func init() {
 	rootCmd.AddCommand(cmd.UsageCmd)
 	rootCmd.AddCommand(cmd.MigrationsCmd)
 	rootCmd.AddCommand(cmd.TestCmd)
+	rootCmd.AddCommand(cmd.DashboardCmd)
 }
 
 func main() {
