@@ -51,7 +51,11 @@ go install github.com/nathabonfim59/cerebras-code-monitor@latest
 
 ### Authentication
 
-The monitor requires a valid authJS session token:
+The monitor can authenticate using either a session cookie or an API key.
+
+#### Session Cookie Authentication (Recommended)
+
+This method provides the most accurate data for token prediction calculations:
 
 1. Log into your Cerebras Cloud account at https://cloud.cerebras.ai
 2. Extract the session token from browser cookies:
@@ -70,6 +74,27 @@ Note: The authjs.session-token cookie is HTTP-only, which prevents programmatic 
 You'll need to manually copy it from your browser's Developer Tools when required. 
 This token is only used to fetch your usage data from Cerebras - you can inspect the 
 source code yourself as this tool is open source.
+
+#### API Key Authentication (Alternative)
+
+You can also authenticate using a Cerebras API key, though this method has limitations:
+- Shows only data for that specific key
+- Cannot switch organizations
+- Less accurate for token prediction calculations
+- Minute-level data is not available
+
+To use API key authentication:
+1. Get your API key from the Cerebras dashboard
+2. Set it as an environment variable:
+   ```bash
+   export CEREBRAS_API_KEY="your-api-key-here"
+   ```
+3. Or use the login command:
+   ```bash
+   cerebras-monitor login apikey your-api-key-here
+   ```
+
+This will save the API key to your local database at XDG/.config/cerebras-monitor/settings.json
 
 ### Basic Commands
 
