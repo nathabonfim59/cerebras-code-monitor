@@ -53,8 +53,11 @@ go install github.com/nathabonfim59/cerebras-code-monitor@latest
 
 The monitor requires a valid authJS session token:
 
-1. Log into your Cerebras Cloud account
+1. Log into your Cerebras Cloud account at https://cloud.cerebras.ai
 2. Extract the session token from browser cookies:
+   - Open Developer Tools (F12 or right-click → Inspect)
+   - Go to Application tab → Cookies → https://cloud.cerebras.ai
+   - Copy the value of 'authjs.session-token' cookie
    ```
    authjs.session-token=your-session-token-here
    ```
@@ -62,6 +65,11 @@ The monitor requires a valid authJS session token:
    ```bash
    export CEREBRAS_SESSION_TOKEN="your-session-token-here"
    ```
+
+Note: The authjs.session-token cookie is HTTP-only, which prevents programmatic access. 
+You'll need to manually copy it from your browser's Developer Tools when required. 
+This token is only used to fetch your usage data from Cerebras - you can inspect the 
+source code yourself as this tool is open source.
 
 ### Basic Commands
 

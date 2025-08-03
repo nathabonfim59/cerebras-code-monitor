@@ -15,7 +15,11 @@ var LoginCmd = &cobra.Command{
 var loginWithCookieCmd = &cobra.Command{
 	Use:   "cookie [cookie-value]",
 	Short: "Login using session cookie",
-	Args:  cobra.ExactArgs(1),
+	Long: `Login using your Cerebras session cookie. Due to HTTP-only cookie restrictions, 
+you'll need to manually copy the 'authjs.session-token' cookie value from your browser's 
+Developer Tools > Application > Cookies. This cookie is only used to fetch your usage data 
+from the Cerebras platform. The tool is open source and you can inspect the code yourself.`,
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		cookieValue := args[0]
 		fmt.Printf("Logging in with cookie: %s\n", cookieValue)
