@@ -126,6 +126,7 @@ cerebras-monitor --refresh-rate 5
 | --debug | flag | false | Enable debug logging |
 | --version, -v | flag | false | Show version information |
 | --clear | flag | false | Clear saved configuration |
+| --icons | string | emoji | Icon set to use: emoji or nerdfont |
 
 ## API Integration
 

@@ -46,3 +46,59 @@ func SetupViper() {
 	// Also check current directory for config (for development)
 	viper.AddConfigPath(".")
 }
+
+// Icons represents the available icon sets
+type Icons struct {
+	Check        string
+	Warning      string
+	Error        string
+	Info         string
+	Refresh      string
+	Dashboard    string
+	Organization string
+	Model        string
+	Token        string
+	Request      string
+	Time         string
+	Theme        string
+	Settings     string
+}
+
+// GetIcons returns the appropriate icon set based on configuration
+func GetIcons() Icons {
+	iconPreference := viper.GetString("icons")
+	if iconPreference == "nerdfont" {
+		return Icons{
+			Check:        NerdfontCheck,
+			Warning:      NerdfontWarning,
+			Error:        NerdfontError,
+			Info:         NerdfontInfo,
+			Refresh:      NerdfontRefresh,
+			Dashboard:    NerdfontDashboard,
+			Organization: NerdfontOrganization,
+			Model:        NerdfontModel,
+			Token:        NerdfontToken,
+			Request:      NerdfontRequest,
+			Time:         NerdfontTime,
+			Theme:        NerdfontTheme,
+			Settings:     NerdfontSettings,
+		}
+	}
+
+	// Default to emoji icons
+	return Icons{
+		Check:        EmojiCheck,
+		Warning:      EmojiWarning,
+		Error:        EmojiError,
+		Info:         EmojiInfo,
+		Refresh:      EmojiRefresh,
+		Dashboard:    EmojiDashboard,
+		Organization: EmojiOrganization,
+		Model:        EmojiModel,
+		Token:        EmojiToken,
+		Request:      EmojiRequest,
+		Time:         EmojiTime,
+		Theme:        EmojiTheme,
+		Settings:     EmojiSettings,
+	}
+}

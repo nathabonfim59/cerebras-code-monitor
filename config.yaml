@@ -11,3 +11,4 @@ log-level: "INFO"
 log-file: ""
 debug: false
 clear: false
+icons: "emoji"  # Options: "emoji" or "nerdfont"

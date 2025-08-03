@@ -52,6 +52,7 @@ func init() {
 	rootCmd.PersistentFlags().String("log-file", "", "Log file path")
 	rootCmd.PersistentFlags().Bool("debug", false, "Enable debug logging")
 	rootCmd.PersistentFlags().Bool("clear", false, "Clear saved configuration")
+	rootCmd.PersistentFlags().String("icons", "emoji", "Icon set to use: emoji or nerdfont")
 	rootCmd.PersistentFlags().BoolP("version", "v", false, "Show version information")
 
 	// Bind flags to viper
@@ -102,6 +103,10 @@ func init() {
 	err = viper.BindPFlag("clear", rootCmd.PersistentFlags().Lookup("clear"))
 	if err != nil {
 		fmt.Printf("Error binding clear flag: %v\n", err)
+	}
+	err = viper.BindPFlag("icons", rootCmd.PersistentFlags().Lookup("icons"))
+	if err != nil {
+		fmt.Printf("Error binding icons flag: %v\n", err)
 	}
 	err = viper.BindPFlag("version", rootCmd.PersistentFlags().Lookup("version"))
 	if err != nil {

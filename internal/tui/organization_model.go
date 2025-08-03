@@ -77,7 +77,8 @@ func (m OrganizationListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View renders the model
 func (m OrganizationListModel) View() string {
-	s := "Select an organization:\n\n"
+	icons := config.GetIcons()
+	s := fmt.Sprintf("%s Select an organization:\n\n", icons.Organization)
 
 	for i, org := range m.Organizations {
 		cursor := " "
@@ -88,7 +89,7 @@ func (m OrganizationListModel) View() string {
 		s += fmt.Sprintf("%s %s (ID: %s)\n", cursor, org.Name, org.ID)
 	}
 
-	s += "\nPress 'enter' or 'space' to select an organization, 'q' to quit.\n"
+	s += fmt.Sprintf("\n%s Press 'enter' or 'space' to select an organization, 'q' to quit.\n", icons.Info)
 
 	return s
 }
