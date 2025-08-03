@@ -51,10 +51,17 @@ go install github.com/nathabonfim59/cerebras-code-monitor@latest
 
 ### Authentication
 
-The monitor requires a valid authJS session token:
+The monitor can authenticate using either a session cookie or an API key.
 
-1. Log into your Cerebras Cloud account
+#### Session Cookie Authentication (Recommended)
+
+This method provides the most accurate data for token prediction calculations:
+
+1. Log into your Cerebras Cloud account at https://cloud.cerebras.ai
 2. Extract the session token from browser cookies:
+   - Open Developer Tools (F12 or right-click → Inspect)
+   - Go to Application tab → Cookies → https://cloud.cerebras.ai
+   - Copy the value of 'authjs.session-token' cookie
    ```
    authjs.session-token=your-session-token-here
    ```
@@ -62,6 +69,35 @@ The monitor requires a valid authJS session token:
    ```bash
    export CEREBRAS_SESSION_TOKEN="your-session-token-here"
    ```
+
+Note: The authjs.session-token cookie is HTTP-only, which prevents programmatic access. 
+You'll need to manually copy it from your browser's Developer Tools when required. 
+This token is only used to fetch your usage data from Cerebras - you can inspect the 
+source code yourself as this tool is open source.
+
+#### API Key Authentication (Alternative)
+
+You can also authenticate using a Cerebras API key, though this method has limitations:
+- Shows only data for that specific key
+- Cannot switch organizations
+- Less accurate for token prediction calculations
+- Minute-level data is not available
+- Each request "wastes" approximately 5 tokens as metadata is extracted from response headers
+- Requires longer monitoring intervals to minimize token consumption
+- Provides less precise monitoring compared to session token authentication
+
+To use API key authentication:
+1. Get your API key from the Cerebras dashboard
+2. Set it as an environment variable:
+   ```bash
+   export CEREBRAS_API_KEY="your-api-key-here"
+   ```
+3. Or use the login command:
+   ```bash
+   cerebras-monitor login apikey your-api-key-here
+   ```
+
+This will save the API key to your local database at `$XDG_CONFIG_HOME/cerebras-monitor/settings.yaml` (typically `~/.config/cerebras-monitor/settings.yaml`)
 
 ### Basic Commands
 
@@ -79,7 +115,7 @@ cerebras-monitor --refresh-rate 5
 |-----------|------|---------|-------------|
 | --session-token | string | "" | Cerebras session token (can be set via environment variable) |
 | --org-id | string | "" | Organization ID to monitor |
-| --model | string | "llama3.1-8b" | Model to monitor |
+| --model | string | "qwen-3-coder-480b" | Model to monitor |
 | --refresh-rate | int | 10 | Data refresh rate in seconds (1-60) |
 | --refresh-per-second | float | 0.75 | Display refresh rate in Hz (0.1-20.0) |
 | --timezone | string | auto | Timezone (auto-detected) |
