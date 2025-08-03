@@ -86,7 +86,68 @@ var testListOrganizationUsageQuotasCmd = &cobra.Command{
 	},
 }
 
+var testListOrganizationUsageCmd = &cobra.Command{
+	Use:   "usage",
+	Short: "Test ListOrganizationUsage GraphQL query",
+	Run: func(cmd *cobra.Command, args []string) {
+		// Create Cerebras client
+		client := cerebras.NewClient()
+		if !client.HasAuth() {
+			fmt.Println("Error: No authentication method configured. Please login first.")
+			return
+		}
+
+		// Create GraphQL client and validate authentication
+		graphqlClient := graphql.NewClient(client.SessionToken())
+
+		// Check if organization ID is provided
+		if len(args) < 1 {
+			fmt.Println("Error: Organization ID is required as an argument")
+			return
+		}
+		orgID := args[0]
+
+		// Make GraphQL request to list organization usage
+		query := graphql.ListOrganizationUsageQuery
+		variables := map[string]interface{}{
+			"organizationId": orgID,
+		}
+		responseBody, err := graphqlClient.MakeRequestWithOperationName("ListOrganizationUsage", query, variables)
+		if err != nil {
+			fmt.Printf("Error fetching organization usage: %v\n", err)
+			return
+		}
+
+		// Parse the GraphQL response
+		var response struct {
+			Data struct {
+				ListOrganizationUsage []cerebras.OrganizationUsage `json:"ListOrganizationUsage"`
+			} `json:"data"`
+		}
+
+		if err := json.Unmarshal(responseBody, &response); err != nil {
+			fmt.Printf("Error parsing response: %v\n", err)
+			return
+		}
+
+		// Display usage information in a formatted way
+		fmt.Printf("Usage Information for Organization %s:\n", orgID)
+		for _, usage := range response.Data.ListOrganizationUsage {
+			fmt.Printf("  Model ID: %s\n", usage.ModelId)
+			fmt.Printf("  Region ID: %s\n", usage.RegionId)
+			fmt.Printf("  RPM: %s\n", usage.RPM)
+			fmt.Printf("  TPM: %s\n", usage.TPM)
+			fmt.Printf("  RPH: %s\n", usage.RPH)
+			fmt.Printf("  TPH: %s\n", usage.TPH)
+			fmt.Printf("  RPD: %s\n", usage.RPD)
+			fmt.Printf("  TPD: %s\n", usage.TPD)
+			fmt.Printf("  ---\n")
+		}
+	},
+}
+
 func init() {
 	TestCmd.AddCommand(testExampleCmd)
 	TestCmd.AddCommand(testListOrganizationUsageQuotasCmd)
+	TestCmd.AddCommand(testListOrganizationUsageCmd)
 }

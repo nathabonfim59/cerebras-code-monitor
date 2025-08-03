@@ -81,14 +81,14 @@ type UsageMetrics struct {
 
 // OrganizationUsage represents usage data for an organization
 type OrganizationUsage struct {
-	ModelId  string `json:"modelId,omitempty"`
-	RegionId string `json:"regionId,omitempty"`
-	RPM      string `json:"rpm,omitempty"`
-	TPM      string `json:"tpm,omitempty"`
-	RPH      string `json:"rph,omitempty"`
-	TPH      string `json:"tph,omitempty"`
-	RPD      string `json:"rpd,omitempty"`
-	TPD      string `json:"tpd,omitempty"`
+	ModelId  string `json:"modelId,omitempty"`  // Model identifier
+	RegionId string `json:"regionId,omitempty"` // Region identifier
+	RPM      string `json:"rpm,omitempty"`      // Requests Per Minute
+	TPM      string `json:"tpm,omitempty"`      // Tokens Per Minute
+	RPH      string `json:"rph,omitempty"`      // Requests Per Hour
+	TPH      string `json:"tph,omitempty"`      // Tokens Per Hour
+	RPD      string `json:"rpd,omitempty"`      // Requests Per Day
+	TPD      string `json:"tpd,omitempty"`      // Tokens Per Day
 	Typename string `json:"__typename,omitempty"`
 }
 

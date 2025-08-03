@@ -32,3 +32,18 @@ const ListOrganizationUsageQuotasQuery = `query ListOrganizationUsageQuotas($org
     __typename
   }
 }`
+
+// ListOrganizationUsageQuery is the GraphQL query for listing organization usage
+const ListOrganizationUsageQuery = `query ListOrganizationUsage($organizationId: ID!) {
+  ListOrganizationUsage(organizationId: $organizationId) {
+    modelId
+    regionId
+    rpm
+    tpm
+    rph
+    tph
+    rpd
+    tpd
+    __typename
+  }
+}`
