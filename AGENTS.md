@@ -8,6 +8,7 @@
 - Lint: `golangci-lint run`
 - Format: `go fmt ./...`
 - Format changed files: `gofmt -w FILE` (except non-Go files)
+- Generate database code: `sqlc generate` (requires sqlc installed)
 
 ## Code Style Guidelines
 - Use descriptive variable names in camelCase
@@ -34,3 +35,14 @@
 - internal/cmd/: command implementations
 - internal/config/: XDG configuration handling
 - config.yaml: default configuration
+
+## Database
+- Uses SQLite via sqlc for type-safe queries
+- Schema defined in db/schema.sql
+- Queries defined in db/query.sql
+- Generated code in internal/db/
+- Uses github.com/guregu/null for nullable types
+
+## Git Ignore Patterns
+- .tmp directories
+- .env files
