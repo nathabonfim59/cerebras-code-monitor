@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/nathabonfim59/cerebras-code-monitor/internal/cerebras"
 	"github.com/spf13/cobra"
@@ -66,20 +67,35 @@ var getUsageCmd = &cobra.Command{
 		}
 
 		usageMetrics := metrics.ToUsageMetrics(orgID, model)
-		quota := metrics.ToQuota()
-
 		// Display usage metrics
 		fmt.Printf("Usage Metrics:\n")
 		fmt.Printf("  Organization ID: %s\n", usageMetrics.OrganizationID)
 		fmt.Printf("  Model Name: %s\n", usageMetrics.ModelName)
-		fmt.Printf("  Tokens Used: %d/%d\n", usageMetrics.TokensUsed, usageMetrics.TokensLimit)
-		fmt.Printf("  Requests Used: %d/%d\n", usageMetrics.RequestsUsed, usageMetrics.RequestsLimit)
+		fmt.Printf("  Tokens Used (last minute): %d/%d\n", usageMetrics.TokensUsed, usageMetrics.TokensLimit)
+		fmt.Printf("  Requests Used (last day): %d/%d\n", usageMetrics.RequestsUsed, usageMetrics.RequestsLimit)
 
-		// Display quota information
-		fmt.Printf("\nQuota Information:\n")
-		fmt.Printf("  Request Limit: %d\n", quota.Limit)
-		fmt.Printf("  Requests Remaining: %d\n", quota.Remaining)
-		fmt.Printf("  Reset Time: %s\n", quota.ResetTime)
+		// Display detailed quota information with user-friendly time formats
+		fmt.Printf("\nDetailed Quota Information:\n")
+		fmt.Printf("  Daily Request Limit: %d\n", metrics.LimitRequestsDay)
+		fmt.Printf("  Daily Requests Remaining: %d\n", metrics.RemainingRequestsDay)
+		if metrics.ResetRequestsDay > 0 {
+			resetDaily := time.Now().Add(time.Duration(metrics.ResetRequestsDay) * time.Second)
+			hoursUntilReset := int(metrics.ResetRequestsDay / 3600)
+			minutesUntilReset := int((metrics.ResetRequestsDay % 3600) / 60)
+			fmt.Printf("  Daily Request Reset: %s (%d hours %d minutes)\n", resetDaily.Format(time.RFC3339), hoursUntilReset, minutesUntilReset)
+		} else {
+			fmt.Printf("  Daily Request Reset: Unknown\n")
+		}
+
+		fmt.Printf("  Minute Token Limit: %d\n", metrics.LimitTokensMinute)
+		fmt.Printf("  Minute Tokens Remaining: %d\n", metrics.RemainingTokensMinute)
+		if metrics.ResetTokensMinute > 0 {
+			resetMinute := time.Now().Add(time.Duration(metrics.ResetTokensMinute) * time.Second)
+			secondsUntilReset := int(metrics.ResetTokensMinute)
+			fmt.Printf("  Minute Token Reset: %s (%d seconds)\n", resetMinute.Format(time.RFC3339), secondsUntilReset)
+		} else {
+			fmt.Printf("  Minute Token Reset: Unknown\n")
+		}
 	},
 }
 var monitorUsageCmd = &cobra.Command{
