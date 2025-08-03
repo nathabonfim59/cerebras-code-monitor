@@ -53,16 +53,24 @@ func GetDBMate() (*dbmate.DB, error) {
 	return db, nil
 }
 
-// MigrateDatabase applies pending migrations
+// MigrateDatabase applies pending migrations if not already at latest version
 func MigrateDatabase() error {
 	db, err := GetDBMate()
 	if err != nil {
 		return err
 	}
 
-	// Apply migrations
-	if err := db.CreateAndMigrate(); err != nil {
-		return fmt.Errorf("failed to migrate database: %w", err)
+	// Check if there are pending migrations
+	status, err := db.Status(false)
+	if err != nil {
+		return fmt.Errorf("failed to get migration status: %w", err)
+	}
+
+	// Only apply migrations if there are pending ones
+	if status > 0 {
+		if err := db.CreateAndMigrate(); err != nil {
+			return fmt.Errorf("failed to migrate database: %w", err)
+		}
 	}
 
 	return nil

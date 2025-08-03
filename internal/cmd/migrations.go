@@ -26,7 +26,10 @@ Available commands:
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		// If no subcommand is called, show help
-		cmd.Help()
+		if err := cmd.Help(); err != nil {
+			fmt.Printf("Error displaying help: %v\n", err)
+			os.Exit(1)
+		}
 	},
 }
 
