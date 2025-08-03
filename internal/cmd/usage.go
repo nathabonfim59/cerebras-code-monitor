@@ -53,14 +53,29 @@ var getUsageCmd = &cobra.Command{
 			return
 		}
 
-		// Display metrics
-		fmt.Printf("Rate Limit Metrics:\n")
-		fmt.Printf("  Daily Request Limit: %d\n", metrics.LimitRequestsDay)
-		fmt.Printf("  Daily Requests Remaining: %d\n", metrics.RemainingRequestsDay)
-		fmt.Printf("  Daily Request Reset Time: %d seconds\n", metrics.ResetRequestsDay)
-		fmt.Printf("  Minute Token Limit: %d\n", metrics.LimitTokensMinute)
-		fmt.Printf("  Minute Tokens Remaining: %d\n", metrics.RemainingTokensMinute)
-		fmt.Printf("  Minute Token Reset Time: %d seconds\n", metrics.ResetTokensMinute)
+		// Convert metrics to UsageMetrics and Quota types
+		orgID := organization
+		if orgID == "" {
+			orgID = "unknown"
+		}
+
+		usageMetrics := metrics.ToUsageMetrics(orgID, "unknown")
+		quota := metrics.ToQuota()
+
+		// Display usage metrics
+		fmt.Printf("Usage Metrics:\n")
+		fmt.Printf("  Organization ID: %s\n", usageMetrics.OrganizationID)
+		fmt.Printf("  Model Name: %s\n", usageMetrics.ModelName)
+		fmt.Printf("  Tokens Used: %d\n", usageMetrics.TokensUsed)
+		fmt.Printf("  Tokens Limit: %d\n", usageMetrics.TokensLimit)
+		fmt.Printf("  Requests Used: %d\n", usageMetrics.RequestsUsed)
+		fmt.Printf("  Requests Limit: %d\n", usageMetrics.RequestsLimit)
+
+		// Display quota information
+		fmt.Printf("\nQuota Information:\n")
+		fmt.Printf("  Limit: %d\n", quota.Limit)
+		fmt.Printf("  Remaining: %d\n", quota.Remaining)
+		fmt.Printf("  Reset Time: %s\n", quota.ResetTime)
 	},
 }
 var monitorUsageCmd = &cobra.Command{
