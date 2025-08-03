@@ -41,15 +41,20 @@ var getUsageCmd = &cobra.Command{
 		}
 
 		fmt.Printf("Getting usage statistics for organization %s...\n", organization)
-		// TODO: Implement usage tracking logic
-		// This would make a request to the Cerebras GraphQL endpoint
-		// and extract rate limit information from response headers
 		metrics, err := client.GetMetrics(organization)
 		if err != nil {
 			fmt.Printf("Error fetching metrics: %v\n", err)
 			return
 		}
-		_ = metrics
+
+		// Display metrics
+		fmt.Printf("Rate Limit Metrics:\n")
+		fmt.Printf("  Daily Request Limit: %d\n", metrics.LimitRequestsDay)
+		fmt.Printf("  Daily Requests Remaining: %d\n", metrics.RemainingRequestsDay)
+		fmt.Printf("  Daily Request Reset Time: %d seconds\n", metrics.ResetRequestsDay)
+		fmt.Printf("  Minute Token Limit: %d\n", metrics.LimitTokensMinute)
+		fmt.Printf("  Minute Tokens Remaining: %d\n", metrics.RemainingTokensMinute)
+		fmt.Printf("  Minute Token Reset Time: %d seconds\n", metrics.ResetTokensMinute)
 	},
 }
 
