@@ -1,5 +1,9 @@
 package cerebras
 
+import (
+	"time"
+)
+
 // RateLimitInfo represents comprehensive rate limit information
 type RateLimitInfo struct {
 	LimitRequestsDay      int64 `json:"limit_requests_day,omitempty"`
@@ -8,6 +12,31 @@ type RateLimitInfo struct {
 	RemainingTokensMinute int64 `json:"remaining_tokens_minute,omitempty"`
 	ResetRequestsDay      int64 `json:"reset_requests_day,omitempty"`
 	ResetTokensMinute     int64 `json:"reset_tokens_minute,omitempty"`
+}
+
+// ToQuota converts RateLimitInfo to Quota
+func (r *RateLimitInfo) ToQuota() *Quota {
+	// Converting requests per day quota
+	return &Quota{
+		Limit:     r.LimitRequestsDay,
+		Remaining: r.RemainingRequestsDay,
+		ResetTime: time.Unix(r.ResetRequestsDay, 0).Format(time.RFC3339),
+	}
+}
+
+// ToUsageMetrics converts RateLimitInfo to UsageMetrics
+func (r *RateLimitInfo) ToUsageMetrics(orgID, modelName string) *UsageMetrics {
+	// Note: We're making assumptions about which limits correspond to which quotas
+	// This is a basic conversion and may not be accurate for all use cases
+	return &UsageMetrics{
+		OrganizationID: orgID,
+		ModelName:      modelName,
+		TokensUsed:     r.LimitTokensMinute - r.RemainingTokensMinute,
+		TokensLimit:    r.LimitTokensMinute,
+		RequestsUsed:   r.LimitRequestsDay - r.RemainingRequestsDay,
+		RequestsLimit:  r.LimitRequestsDay,
+		Quotas:         []Quota{*r.ToQuota()},
+	}
 }
 
 // Quota represents rate limit quota information

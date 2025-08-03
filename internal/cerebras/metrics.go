@@ -80,7 +80,13 @@ func (c *Client) getMetricsWithAPIKey() (*RateLimitInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			// Log the error or handle it appropriately
+			// For now, we'll just print it to stderr
+			fmt.Fprintf(viper.Get("stderr").(*strings.Builder), "Error closing response body: %v\n", closeErr)
+		}
+	}()
 
 	// Debug: print all headers if debug flag is set
 	if viper.GetBool("debug") {
