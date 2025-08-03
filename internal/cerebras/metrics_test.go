@@ -2,6 +2,7 @@ package cerebras
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -378,8 +379,7 @@ func TestModelConfigurationInMetrics(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				// Verify the request body contains the expected model
-				buf := make([]byte, r.ContentLength)
-				_, err := r.Body.Read(buf)
+				buf, err := io.ReadAll(r.Body)
 				if err != nil {
 					t.Fatalf("Failed to read request body: %v", err)
 				}
@@ -392,6 +392,10 @@ func TestModelConfigurationInMetrics(t *testing.T) {
 
 				w.Header().Set("X-Ratelimit-Limit-Requests-Day", "28800")
 				w.WriteHeader(http.StatusOK)
+				_, err = w.Write([]byte(`{"choices": [{"message": {"content": "test"}}]}`))
+				if err != nil {
+					t.Fatalf("Failed to write response: %v", err)
+				}
 			}))
 			defer server.Close()
 
