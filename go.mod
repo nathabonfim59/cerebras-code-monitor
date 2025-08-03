@@ -8,9 +8,6 @@ require (
 )
 
 require (
-	github.com/cli/browser v1.3.0 // indirect
-	github.com/cli/oauth v1.2.0 // indirect
-	github.com/cli/safeexec v1.0.1 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
