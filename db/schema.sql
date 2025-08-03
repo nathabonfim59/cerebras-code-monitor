@@ -92,6 +92,38 @@ CREATE INDEX idx_snapshots_time ON usage_snapshots(timestamp DESC);
 CREATE INDEX idx_snapshots_org_model ON usage_snapshots(organization_id, model_name, timestamp DESC);
 CREATE INDEX idx_metrics_window ON usage_metrics(time_window, timestamp DESC);
 CREATE INDEX idx_alerts_unack ON alerts(organization_id, acknowledged, timestamp DESC);
+CREATE TABLE usage_metrics_archive (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp DATETIME NOT NULL,
+    organization_id TEXT NOT NULL,
+    model_name TEXT NOT NULL,
+    time_window TEXT NOT NULL,         -- 'minute', 'hour', 'day'
+
+    -- Aggregated usage
+    total_tokens_used INTEGER,
+    total_requests_used INTEGER,
+
+    -- Burn rates
+    avg_burn_rate_tokens REAL,         -- tokens per minute average
+    peak_burn_rate_tokens REAL,        -- peak tokens per minute
+    avg_burn_rate_requests REAL,       -- requests per minute average
+
+    -- Statistical analysis
+    is_above_average BOOLEAN DEFAULT 0,
+    deviation_percentage REAL,         -- % above/below average
+
+    -- Sample counts
+    snapshot_count INTEGER,            -- Number of snapshots in window
+
+    UNIQUE(organization_id, model_name, time_window, timestamp)
+);
+CREATE INDEX idx_org_model_time ON usage_snapshots(organization_id, model_name, timestamp);
+CREATE INDEX idx_timestamp ON usage_snapshots(timestamp);
+CREATE INDEX idx_org_model_window ON usage_metrics(organization_id, model_name, time_window);
+CREATE INDEX idx_timestamp_window ON usage_metrics(timestamp, time_window);
+CREATE INDEX idx_timestamp_alerts ON alerts(timestamp);
+CREATE INDEX idx_org_unack ON alerts(organization_id, acknowledged);
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
-  ('0001');
+  ('0001'),
+  ('0002');
