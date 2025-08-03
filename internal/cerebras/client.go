@@ -66,11 +66,11 @@ func (c *Client) APIKey() string {
 func (c *Client) getAuthHeaders() map[string]string {
 	headers := make(map[string]string)
 
-	// For GraphQL requests, always use session token via cookies if available
-	if c.sessionToken != "" {
-		headers["Cookie"] = fmt.Sprintf("authjs.session-token=%s", c.sessionToken)
-	} else if c.apiKey != "" {
+	// Prioritize API key over session token for REST API requests
+	if c.apiKey != "" {
 		headers["Authorization"] = fmt.Sprintf("Bearer %s", c.apiKey)
+	} else if c.sessionToken != "" {
+		headers["Cookie"] = fmt.Sprintf("authjs.session-token=%s", c.sessionToken)
 	}
 
 	return headers

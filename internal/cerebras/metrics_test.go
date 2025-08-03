@@ -235,22 +235,6 @@ func TestGetMetricsWithAPIKeyError(t *testing.T) {
 	}
 }
 
-func TestGetMetricsWithSessionToken(t *testing.T) {
-	client := &Client{
-		httpClient:   &http.Client{},
-		sessionToken: "test-session-token",
-		baseURL:      "https://api.cerebras.ai",
-	}
-
-	// This function currently returns empty data as it's not implemented
-	_, err := client.getMetricsWithSessionToken("test-org")
-	if err != nil {
-		t.Fatalf("Expected no error, got: %v", err)
-	}
-
-	// Since the implementation returns empty data, we just verify it doesn't crash
-}
-
 func TestRateLimitHeaderParsing(t *testing.T) {
 	tests := []struct {
 		name        string

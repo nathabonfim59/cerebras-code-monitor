@@ -29,6 +29,11 @@ func (c *Client) HasAuth() bool {
 	return c.sessionToken != ""
 }
 
+// SessionToken returns the session token
+func (c *Client) SessionToken() string {
+	return c.sessionToken
+}
+
 // getAuthHeaders returns the appropriate headers for GraphQL authentication
 func (c *Client) getAuthHeaders() map[string]string {
 	headers := make(map[string]string)
