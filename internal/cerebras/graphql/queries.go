@@ -10,3 +10,25 @@ const ListOrganizationsQuery = `query ListMyOrganizations {
     __typename
   }
 }`
+
+// ListOrganizationUsageQuotasQuery is the GraphQL query for listing organization usage quotas
+const ListOrganizationUsageQuotasQuery = `query ListOrganizationUsageQuotas($organizationId: ID!, $modelId: ID, $regionId: ID) {
+  ListOrganizationUsageQuotas(
+    organizationId: $organizationId
+    modelId: $modelId
+    regionId: $regionId
+  ) {
+    modelId
+    regionId
+    organizationId
+    requestsPerMinute
+    tokensPerMinute
+    requestsPerHour
+    tokensPerHour
+    requestsPerDay
+    tokensPerDay
+    maxSequenceLength
+    maxCompletionTokens
+    __typename
+  }
+}`
