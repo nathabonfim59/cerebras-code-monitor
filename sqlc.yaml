@@ -2,7 +2,7 @@ version: "2"
 sql:
   - engine: "sqlite"
     queries: db/query.sql
-    schema: database_schema.sql
+    schema: db/schema.sql
     gen:
       go:
         package: db
@@ -17,7 +17,7 @@ sql:
               import: "github.com/guregu/null"
               package: "null"
               type: "String"
-          
+
           # Integer type overrides for nullable integers
           - db_type: "integer"
             nullable: true
@@ -33,7 +33,7 @@ sql:
               import: "github.com/guregu/null"
               package: "null"
               type: "Float"
-          
+
           # Boolean type override for nullable booleans
           - db_type: "boolean"
             nullable: true
@@ -41,7 +41,7 @@ sql:
               import: "github.com/guregu/null"
               package: "null"
               type: "Bool"
-          
+
           # Time type override for nullable timestamps
           - db_type: "datetime"
             nullable: true
