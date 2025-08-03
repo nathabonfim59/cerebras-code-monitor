@@ -295,3 +295,139 @@ func TestMakeRequestWithOperationNameHTTPError(t *testing.T) {
 		t.Errorf("Expected specific HTTP error message, got '%s'", err.Error())
 	}
 }
+
+func TestListOrganizations(t *testing.T) {
+	// Test data
+	testSessionToken := "test-session-token"
+	testOrganizations := []struct {
+		ID               string `json:"id"`
+		Name             string `json:"name"`
+		OrganizationType string `json:"organizationType"`
+		State            string `json:"state"`
+		Typename         string `json:"__typename"`
+	}{
+		{
+			ID:               "org1",
+			Name:             "Test Organization 1",
+			OrganizationType: "personal",
+			State:            "active",
+			Typename:         "Organization",
+		},
+		{
+			ID:               "org2",
+			Name:             "Test Organization 2",
+			OrganizationType: "team",
+			State:            "active",
+			Typename:         "Organization",
+		},
+	}
+
+	// Create test server
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify request method
+		if r.Method != "POST" {
+			t.Errorf("Expected POST request, got %s", r.Method)
+		}
+
+		// Verify content type
+		if r.Header.Get("Content-Type") != "application/json" {
+			t.Errorf("Expected Content-Type application/json, got %s", r.Header.Get("Content-Type"))
+		}
+
+		// Verify authentication cookie
+		expectedCookie := fmt.Sprintf("authjs.session-token=%s", testSessionToken)
+		if r.Header.Get("Cookie") != expectedCookie {
+			t.Errorf("Expected Cookie header '%s', got '%s'", expectedCookie, r.Header.Get("Cookie"))
+		}
+
+		// Verify operation name
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatalf("Failed to read request body: %v", err)
+		}
+
+		var requestBody map[string]interface{}
+		if err := json.Unmarshal(body, &requestBody); err != nil {
+			t.Fatalf("Failed to unmarshal request body: %v", err)
+		}
+
+		if requestBody["operationName"] != "ListMyOrganizations" {
+			t.Errorf("Expected operationName 'ListMyOrganizations', got '%s'", requestBody["operationName"])
+		}
+
+		// Create response
+		response := map[string]interface{}{
+			"data": map[string]interface{}{
+				"ListMyOrganizations": testOrganizations,
+			},
+		}
+
+		responseBody, err := json.Marshal(response)
+		if err != nil {
+			t.Fatalf("Failed to marshal response: %v", err)
+		}
+
+		// Send response
+		w.WriteHeader(http.StatusOK)
+		_, err = w.Write(responseBody)
+		if err != nil {
+			t.Fatalf("Failed to write response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	// Create client
+	client := NewClient(testSessionToken)
+	client.url = server.URL
+
+	// Execute request
+	responseBody, err := client.MakeRequestWithOperationName("ListMyOrganizations", ListOrganizationsQuery, map[string]interface{}{})
+	if err != nil {
+		t.Fatalf("ListOrganizations failed: %v", err)
+	}
+
+	// Verify response structure
+	var response struct {
+		Data struct {
+			ListMyOrganizations []map[string]interface{} `json:"ListMyOrganizations"`
+		} `json:"data"`
+	}
+
+	if err := json.Unmarshal(responseBody, &response); err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
+
+	if len(response.Data.ListMyOrganizations) != 2 {
+		t.Errorf("Expected 2 organizations, got %d", len(response.Data.ListMyOrganizations))
+	}
+
+	// Verify first organization data
+	org1 := response.Data.ListMyOrganizations[0]
+	if org1["id"] != "org1" {
+		t.Errorf("Expected first org ID 'org1', got '%s'", org1["id"])
+	}
+	if org1["name"] != "Test Organization 1" {
+		t.Errorf("Expected first org name 'Test Organization 1', got '%s'", org1["name"])
+	}
+	if org1["organizationType"] != "personal" {
+		t.Errorf("Expected first org type 'personal', got '%s'", org1["organizationType"])
+	}
+	if org1["state"] != "active" {
+		t.Errorf("Expected first org state 'active', got '%s'", org1["state"])
+	}
+
+	// Verify second organization data
+	org2 := response.Data.ListMyOrganizations[1]
+	if org2["id"] != "org2" {
+		t.Errorf("Expected second org ID 'org2', got '%s'", org2["id"])
+	}
+	if org2["name"] != "Test Organization 2" {
+		t.Errorf("Expected second org name 'Test Organization 2', got '%s'", org2["name"])
+	}
+	if org2["organizationType"] != "team" {
+		t.Errorf("Expected second org type 'team', got '%s'", org2["organizationType"])
+	}
+	if org2["state"] != "active" {
+		t.Errorf("Expected second org state 'active', got '%s'", org2["state"])
+	}
+}
