@@ -116,6 +116,7 @@ func init() {
 	rootCmd.AddCommand(cmd.OrganizationsCmd)
 	rootCmd.AddCommand(cmd.QuotasCmd)
 	rootCmd.AddCommand(cmd.UsageCmd)
+	rootCmd.AddCommand(cmd.TestCmd)
 }
 
 func main() {
