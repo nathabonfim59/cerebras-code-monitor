@@ -162,7 +162,9 @@ func (c *Client) MakeGraphQLRequestWithOperationName(operationName, query string
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if debug {
 		fmt.Printf("Debug: Response Status: %s\n", resp.Status)
