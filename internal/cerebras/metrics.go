@@ -9,18 +9,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Metrics represents usage metrics from Cerebras
-type Metrics struct {
-	LimitRequestsDay      int64 `json:"limit_requests_day"`
-	LimitTokensMinute     int64 `json:"limit_tokens_minute"`
-	RemainingRequestsDay  int64 `json:"remaining_requests_day"`
-	RemainingTokensMinute int64 `json:"remaining_tokens_minute"`
-	ResetRequestsDay      int64 `json:"reset_requests_day"`
-	ResetTokensMinute     int64 `json:"reset_tokens_minute"`
-}
-
 // GetMetrics fetches usage metrics from Cerebras servers
-func (c *Client) GetMetrics(organization string) (*Metrics, error) {
+func (c *Client) GetMetrics(organization string) (*RateLimitInfo, error) {
 	if !c.HasAuth() {
 		return nil, fmt.Errorf("no authentication method configured")
 	}
@@ -38,7 +28,7 @@ func (c *Client) GetMetrics(organization string) (*Metrics, error) {
 }
 
 // getMetricsWithSessionToken fetches metrics using GraphQL with session token auth
-func (c *Client) getMetricsWithSessionToken(organization string) (*Metrics, error) {
+func (c *Client) getMetricsWithSessionToken(organization string) (*RateLimitInfo, error) {
 	// TODO: Implement GraphQL request to fetch metrics
 	// Use c.sessionToken for authentication
 
@@ -55,11 +45,12 @@ func (c *Client) getMetricsWithSessionToken(organization string) (*Metrics, erro
 	}
 
 	// TODO: Execute request and parse response
-	return nil, fmt.Errorf("not implemented")
+	// For now, return empty quota
+	return &RateLimitInfo{}, nil
 }
 
 // getMetricsWithAPIKey fetches metrics using REST API with API key auth
-func (c *Client) getMetricsWithAPIKey() (*Metrics, error) {
+func (c *Client) getMetricsWithAPIKey() (*RateLimitInfo, error) {
 	// Make a chat completion request to get rate limit headers
 	url := fmt.Sprintf("%s/v1/chat/completions", c.baseURL)
 
@@ -102,45 +93,46 @@ func (c *Client) getMetricsWithAPIKey() (*Metrics, error) {
 	}
 
 	// Parse rate limit headers regardless of status code
-	metrics := &Metrics{}
+	rateLimitInfo := &RateLimitInfo{}
 	if limit := resp.Header.Get("X-Ratelimit-Limit-Requests-Day"); limit != "" {
 		if val, err := strconv.ParseInt(limit, 10, 64); err == nil {
-			metrics.LimitRequestsDay = val
+			rateLimitInfo.LimitRequestsDay = val
 		}
 	}
 
 	if limit := resp.Header.Get("X-Ratelimit-Limit-Tokens-Minute"); limit != "" {
 		if val, err := strconv.ParseInt(limit, 10, 64); err == nil {
-			metrics.LimitTokensMinute = val
+			rateLimitInfo.LimitTokensMinute = val
 		}
 	}
 
 	if remaining := resp.Header.Get("X-Ratelimit-Remaining-Requests-Day"); remaining != "" {
 		if val, err := strconv.ParseInt(remaining, 10, 64); err == nil {
-			metrics.RemainingRequestsDay = val
+			rateLimitInfo.RemainingRequestsDay = val
 		}
 	}
 
 	if remaining := resp.Header.Get("X-Ratelimit-Remaining-Tokens-Minute"); remaining != "" {
 		if val, err := strconv.ParseInt(remaining, 10, 64); err == nil {
-			metrics.RemainingTokensMinute = val
+			rateLimitInfo.RemainingTokensMinute = val
 		}
 	}
 
 	if reset := resp.Header.Get("X-Ratelimit-Reset-Requests-Day"); reset != "" {
 		if val, err := strconv.ParseFloat(reset, 64); err == nil {
-			metrics.ResetRequestsDay = int64(val)
+			rateLimitInfo.ResetRequestsDay = int64(val)
 		}
 	}
 
 	if reset := resp.Header.Get("X-Ratelimit-Reset-Tokens-Minute"); reset != "" {
 		if val, err := strconv.ParseFloat(reset, 64); err == nil {
-			metrics.ResetTokensMinute = int64(val)
+			rateLimitInfo.ResetTokensMinute = int64(val)
 		}
 	}
-	// If we got rate limit headers, return the metrics even if the request failed
-	if metrics.LimitRequestsDay > 0 || metrics.LimitTokensMinute > 0 || metrics.RemainingRequestsDay > 0 || metrics.RemainingTokensMinute > 0 {
-		return metrics, nil
+
+	// If we got rate limit headers, return the rateLimitInfo even if the request failed
+	if rateLimitInfo.LimitRequestsDay > 0 || rateLimitInfo.LimitTokensMinute > 0 || rateLimitInfo.RemainingRequestsDay > 0 || rateLimitInfo.RemainingTokensMinute > 0 {
+		return rateLimitInfo, nil
 	}
 
 	// Otherwise, return an error
@@ -148,5 +140,5 @@ func (c *Client) getMetricsWithAPIKey() (*Metrics, error) {
 		return nil, fmt.Errorf("API request failed with status code: %d", resp.StatusCode)
 	}
 
-	return metrics, nil
+	return rateLimitInfo, nil
 }
