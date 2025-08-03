@@ -6,6 +6,7 @@ import (
 
 	"github.com/nathabonfim59/cerebras-code-monitor/internal/cmd"
 	"github.com/nathabonfim59/cerebras-code-monitor/internal/config"
+	"github.com/nathabonfim59/cerebras-code-monitor/internal/db"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -14,6 +15,16 @@ var rootCmd = &cobra.Command{
 	Use:   "cerebras-monitor",
 	Short: "A tool to monitor Cerebras AI usage",
 	Long:  "Real-time monitoring tool for Cerebras AI usage with rate limit tracking. Track your token consumption and request limits with predictions and warnings.",
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		// Check for pending migrations and apply them
+		if cmd.Name() != "migrations" && cmd.Name() != "help" {
+			// Only run migrations if not in migrations or help command
+			if err := db.MigrateDatabase(); err != nil {
+				fmt.Printf("Error migrating database: %v\n", err)
+				os.Exit(1)
+			}
+		}
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		// Check if version flag is set
 		if version, _ := cmd.Flags().GetBool("version"); version {
@@ -116,6 +127,7 @@ func init() {
 	rootCmd.AddCommand(cmd.OrganizationsCmd)
 	rootCmd.AddCommand(cmd.QuotasCmd)
 	rootCmd.AddCommand(cmd.UsageCmd)
+	rootCmd.AddCommand(cmd.MigrationsCmd)
 	rootCmd.AddCommand(cmd.TestCmd)
 }
 
