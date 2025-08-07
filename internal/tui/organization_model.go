@@ -78,18 +78,29 @@ func (m OrganizationListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // View renders the model
 func (m OrganizationListModel) View() string {
 	icons := config.GetIcons()
-	s := fmt.Sprintf("%s Select an organization:\n\n", icons.Organization)
+	styles := GetStyles()
 
+	// Header
+	s := styles.SectionTitle.Render(fmt.Sprintf("%s Select an organization:", icons.Organization)) + "\n\n"
+
+	// List
 	for i, org := range m.Organizations {
-		cursor := " "
+		line := fmt.Sprintf("%s (ID: %s)", org.Name, org.ID)
 		if m.Cursor == i {
-			cursor = ">"
+			// cursor and selected style
+			cursor := styles.ListCursor.Render(">")
+			line = cursor + " " + styles.ListSelected.Render(line)
+		} else {
+			line = "  " + styles.ListItem.Render(line)
 		}
-
-		s += fmt.Sprintf("%s %s (ID: %s)\n", cursor, org.Name, org.ID)
+		s += line + "\n"
 	}
 
-	s += fmt.Sprintf("\n%s Press 'enter' or 'space' to select an organization, 'q' to quit.\n", icons.Info)
+	// Hints
+	s += "\n" + styles.Hint.Render(fmt.Sprintf("%s ", icons.Info)) +
+		styles.Key.Render("enter/space") + styles.Hint.Render(": select  •  ") +
+		styles.Key.Render("up/down") + styles.Hint.Render(": navigate  •  ") +
+		styles.Key.Render("q") + styles.Hint.Render(": quit") + "\n"
 
 	return s
 }

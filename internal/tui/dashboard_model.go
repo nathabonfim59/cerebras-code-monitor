@@ -123,40 +123,34 @@ func (m DashboardModel) View() string {
 	}
 
 	icons := config.GetIcons()
+	styles := GetStyles()
 
-	// Define styles
-	titleStyle := lipgloss.NewStyle().
-		Foreground(primaryColor).
-		Bold(true).
-		Align(lipgloss.Center).
-		Width(m.width)
-
-	tabStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#7D7D7D")).
-		Background(lipgloss.Color("#1a1a1a")).
-		Padding(0, 2).
-		MarginRight(1)
-
-	activeTabStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("white")).
-		Background(primaryColor).
-		Padding(0, 2).
-		MarginRight(1).
-		Bold(true)
-
-	statusBarStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#ffffff")).
-		Background(lipgloss.Color("#2a2a2a")).
-		Padding(0, 1).
-		Width(m.width)
-
-	contentStyle := lipgloss.NewStyle().
+	// Define styles using centralized theme
+	titleStyle := styles.Header.Copy().
 		Width(m.width).
-		Height(m.height-4).
-		Padding(1, 2)
+		MaxWidth(m.width)
+
+	tabStyle := styles.TabInactive
+
+	activeTabStyle := styles.TabActive
+
+	statusBarStyle := styles.StatusBar.Copy().
+		Width(m.width).
+		MaxWidth(m.width)
+
+	contentHeight := m.height - 6
+	if contentHeight < 4 {
+		contentHeight = 4
+	}
+
+	contentStyle := styles.Content.Copy().
+		Width(m.width).
+		MaxWidth(m.width).
+		Height(contentHeight).
+		Align(lipgloss.Left)
 
 	// Render header with title
-	title := titleStyle.Render(fmt.Sprintf("%s Cerebras Code Monitor Dashboard", icons.Dashboard))
+	title := titleStyle.Render(fmt.Sprintf(" %s Cerebras Code Monitor Dashboard", icons.Dashboard))
 
 	// Render tabs
 	var tabs []string
@@ -206,11 +200,10 @@ func (m DashboardModel) View() string {
 // renderDashboard renders the main dashboard content
 func (m DashboardModel) renderDashboard() string {
 	icons := config.GetIcons()
+	styles := GetStyles()
 
 	if m.err != nil {
-		return lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#ff0000")).
-			Render(fmt.Sprintf("Error: %v", m.err))
+		return styles.Error.Render(fmt.Sprintf("Error: %v", m.err))
 	}
 
 	if m.metrics == nil {
@@ -238,15 +231,16 @@ func (m DashboardModel) renderDashboard() string {
 	tokensStatusColor := m.getStatusColor(tokensPercent)
 
 	// Style the metrics display
-	metricStyle := lipgloss.NewStyle().MarginBottom(1)
-	requestsStyle := lipgloss.NewStyle().Foreground(requestsStatusColor)
-	tokensStyle := lipgloss.NewStyle().Foreground(tokensStatusColor)
+	metricStyle := lipgloss.NewStyle().MarginBottom(1).Align(lipgloss.Left)
+	requestsStyle := lipgloss.NewStyle().Foreground(requestsStatusColor).Align(lipgloss.Left)
+	tokensStyle := lipgloss.NewStyle().Foreground(tokensStatusColor).Align(lipgloss.Left)
 
 	// Render dashboard content
 	var s strings.Builder
-	s.WriteString(lipgloss.NewStyle().Bold(true).Foreground(primaryColor).Render("Rate Limit Overview\n\n"))
+	s.WriteString(styles.SectionTitle.Render("Rate Limit Overview") + "\n\n")
 
-	s.WriteString(requestsStyle.Render(fmt.Sprintf(
+	s.WriteString("\n")
+	s.WriteString(requestsStyle.Align(lipgloss.Left).Render(fmt.Sprintf(
 		"%s Daily Requests: %s %.1f%% (%.0f/%d)",
 		icons.Request,
 		requestsBar,
@@ -256,7 +250,7 @@ func (m DashboardModel) renderDashboard() string {
 	)))
 	s.WriteString("\n")
 
-	s.WriteString(tokensStyle.Render(fmt.Sprintf(
+	s.WriteString(tokensStyle.Align(lipgloss.Left).Render(fmt.Sprintf(
 		"%s Minute Tokens: %s %.1f%% (%.0f/%d)",
 		icons.Token,
 		tokensBar,
@@ -312,6 +306,7 @@ func (m DashboardModel) renderDashboard() string {
 // renderUsage renders the usage tab content
 func (m DashboardModel) renderUsage() string {
 	icons := config.GetIcons()
+	styles := GetStyles()
 
 	if m.metrics == nil {
 		return fmt.Sprintf("%s Loading usage data...", icons.Info)
@@ -330,10 +325,10 @@ func (m DashboardModel) renderUsage() string {
 
 	// Create a table-like view for usage data
 	var s strings.Builder
-	s.WriteString(lipgloss.NewStyle().Bold(true).Foreground(primaryColor).Render("Usage Statistics\n\n"))
+	s.WriteString(styles.SectionTitle.Render("Usage Statistics") + "\n\n")
 
-	headerStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#ffffff")).PaddingRight(2)
-	valueStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#a0a0a0")).PaddingRight(2)
+	headerStyle := styles.TableHeader
+	valueStyle := styles.TableCell
 
 	s.WriteString(headerStyle.Render("Metric") + headerStyle.Render("Used") + headerStyle.Render("Limit") + headerStyle.Render("Reset") + "\n")
 	s.WriteString(valueStyle.Render("Daily Requests") +
@@ -350,10 +345,11 @@ func (m DashboardModel) renderUsage() string {
 
 // renderQuotas renders the quotas tab content
 func (m DashboardModel) renderQuotas() string {
-	icons := config.GetIcons()
+    icons := config.GetIcons()
+	styles := GetStyles()
 
 	var s strings.Builder
-	s.WriteString(lipgloss.NewStyle().Bold(true).Foreground(primaryColor).Render("Quotas Information\n\n"))
+	s.WriteString(styles.SectionTitle.Render("Quotas Information") + "\n\n")
 	s.WriteString(fmt.Sprintf("%s Detailed quota information will be displayed here.\n", icons.Info))
 	s.WriteString(fmt.Sprintf("%s Currently showing basic rate limits from the Dashboard tab.\n", icons.Info))
 
@@ -362,10 +358,11 @@ func (m DashboardModel) renderQuotas() string {
 
 // renderSettings renders the settings tab content
 func (m DashboardModel) renderSettings() string {
-	icons := config.GetIcons()
+    icons := config.GetIcons()
+	styles := GetStyles()
 
 	var s strings.Builder
-	s.WriteString(lipgloss.NewStyle().Bold(true).Foreground(primaryColor).Render("Settings\n\n"))
+	s.WriteString(styles.SectionTitle.Render("Settings") + "\n\n")
 	s.WriteString(fmt.Sprintf("%s Refresh Rate: %d seconds\n", icons.Time, m.refreshRate))
 	s.WriteString(fmt.Sprintf("%s Organization: %s\n", icons.Organization, m.organization))
 	s.WriteString(fmt.Sprintf("%s Model: %s\n\n", icons.Model, m.modelName))
@@ -379,29 +376,48 @@ func (m DashboardModel) renderSettings() string {
 
 // createProgressBar creates a visual progress bar
 func (m DashboardModel) createProgressBar(percent float64, width int) string {
+	if width <= 0 {
+		return ""
+	}
+	if percent < 0 {
+		percent = 0
+	}
+	if percent > 100 {
+		percent = 100
+	}
 	filled := int(percent / 100 * float64(width))
+	if filled > width {
+		filled = width
+	}
 	empty := width - filled
 
-	barStyle := lipgloss.NewStyle().Background(lipgloss.Color("#444444"))
-	filledStyle := lipgloss.NewStyle().Background(m.getStatusColor(percent))
+	filledStr := strings.Repeat("█", filled)
+	emptyStr := strings.Repeat("░", empty)
 
-	filledBar := filledStyle.Render(strings.Repeat(" ", filled))
-	emptyBar := barStyle.Render(strings.Repeat(" ", empty))
+	// color the filled part; prefer cerebras primaryColor for safe ranges under 75, else status color
+	fillColor := m.getStatusColor(percent)
+	if percent <= 75 {
+		fillColor = primaryColor
+	}
 
-	return "[" + filledBar + emptyBar + "]"
+	styles := GetStyles()
+	filledStyled := lipgloss.NewStyle().Foreground(fillColor).Render(filledStr)
+	emptyStyled := styles.ProgressEmpty.Render(emptyStr)
+
+	return "[" + filledStyled + emptyStyled + "]"
 }
 
 // getStatusColor returns a color based on usage percentage
 func (m DashboardModel) getStatusColor(percent float64) lipgloss.Color {
 	switch {
 	case percent > 90:
-		return lipgloss.Color("#ff0000") // Red
+		return lipgloss.Color("#ff4d4d") // Red
 	case percent > 75:
 		return lipgloss.Color("#ff9900") // Orange
 	case percent > 50:
 		return lipgloss.Color("#ffff00") // Yellow
 	default:
-		return lipgloss.Color("#00ff00") // Green
+		return primaryColor // Use cerebras color for healthy usage
 	}
 }
 
