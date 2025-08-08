@@ -16,13 +16,35 @@ func (c *Client) GetMetrics(organization string) (*RateLimitInfo, error) {
 		return nil, fmt.Errorf("no authentication method configured")
 	}
 
-	// Determine which authentication method to use
-	// Prefer session token (GraphQL) when organization is provided, for live usage/quotas
+	// Prefer GraphQL (session token + organization) for richer data
 	if c.sessionToken != "" && organization != "" {
-		return c.getMetricsWithSessionToken(organization)
+		gql, err := c.getMetricsWithSessionToken(organization)
+		if err == nil {
+			// If we also have an API key, try to enrich with REST (resets/remaining)
+			if c.apiKey != "" {
+				if rest, rerr := c.getMetricsWithAPIKey(); rerr == nil && rest != nil {
+					// Use REST resets when GraphQL lacks them
+					if gql.ResetRequestsDay == 0 && rest.ResetRequestsDay > 0 {
+						gql.ResetRequestsDay = rest.ResetRequestsDay
+					}
+					if gql.ResetTokensMinute == 0 && rest.ResetTokensMinute > 0 {
+						gql.ResetTokensMinute = rest.ResetTokensMinute
+					}
+					// If GraphQL didn't compute remainings, take REST values
+					if gql.LimitRequestsDay > 0 && gql.RemainingRequestsDay == 0 && rest.RemainingRequestsDay > 0 {
+						gql.RemainingRequestsDay = rest.RemainingRequestsDay
+					}
+					if gql.LimitTokensMinute > 0 && gql.RemainingTokensMinute == 0 && rest.RemainingTokensMinute > 0 {
+						gql.RemainingTokensMinute = rest.RemainingTokensMinute
+					}
+				}
+			}
+			return gql, nil
+		}
+		// If GraphQL failed, fall through to REST
 	}
 
-	// Otherwise, fall back to API key (REST) which exposes rate limit headers
+	// Fallback to REST headers when available
 	if c.apiKey != "" {
 		return c.getMetricsWithAPIKey()
 	}
@@ -113,12 +135,18 @@ func (c *Client) getMetricsWithSessionToken(organization string) (*RateLimitInfo
 	}
 
 	limits := &RateLimitInfo{
+		LimitRequestsMinute:   parse(selected.RequestsPerMinute),
+		LimitRequestsHour:     parse(selected.RequestsPerHour),
 		LimitRequestsDay:      parse(selected.RequestsPerDay),
 		LimitTokensMinute:     parse(selected.TokensPerMinute),
-		RemainingRequestsDay:  0, // will compute below
-		RemainingTokensMinute: 0, // will compute below
+		LimitTokensHour:       parse(selected.TokensPerHour),
+		LimitTokensDay:        parse(selected.TokensPerDay),
 		ResetRequestsDay:      0,
 		ResetTokensMinute:     0,
+		ModelId:               selected.ModelId,
+		RegionId:              selected.RegionId,
+		MaxSequenceLength:     parse(selected.MaxSequenceLength),
+		MaxCompletionTokens:   parse(selected.MaxCompletionTokens),
 	}
 
 	// Additionally fetch current usage to compute "remaining" values so UI shows progress
@@ -157,38 +185,78 @@ func (c *Client) getMetricsWithSessionToken(organization string) (*RateLimitInfo
 			}
 
 			if matched != nil {
-				// Parse token/minute usage and requests/day usage
+				// Parse usage across minute/hour/day for requests and tokens
+				usedRPM := parse(matched.RPM)
 				usedTPM := parse(matched.TPM)
+				usedRPH := parse(matched.RPH)
+				usedTPH := parse(matched.TPH)
 				usedRPD := parse(matched.RPD)
+				usedTPD := parse(matched.TPD)
 
+				limits.UsageRequestsMinute = usedRPM
+				limits.UsageTokensMinute = usedTPM
+				limits.UsageRequestsHour = usedRPH
+				limits.UsageTokensHour = usedTPH
+				limits.UsageRequestsDay = usedRPD
+				limits.UsageTokensDay = usedTPD
+
+				// Compute remaining when limits are known
 				if limits.LimitTokensMinute > 0 {
-					remTPM := limits.LimitTokensMinute - usedTPM
-					if remTPM < 0 {
-						remTPM = 0
-					}
-					limits.RemainingTokensMinute = remTPM
+					rem := limits.LimitTokensMinute - usedTPM
+					if rem < 0 { rem = 0 }
+					limits.RemainingTokensMinute = rem
+				}
+				if limits.LimitTokensHour > 0 {
+					rem := limits.LimitTokensHour - usedTPH
+					if rem < 0 { rem = 0 }
+					limits.RemainingTokensHour = rem
+				}
+				if limits.LimitTokensDay > 0 {
+					rem := limits.LimitTokensDay - usedTPD
+					if rem < 0 { rem = 0 }
+					limits.RemainingTokensDay = rem
+				}
+				if limits.LimitRequestsMinute > 0 {
+					rem := limits.LimitRequestsMinute - usedRPM
+					if rem < 0 { rem = 0 }
+					limits.RemainingRequestsMinute = rem
+				}
+				if limits.LimitRequestsHour > 0 {
+					rem := limits.LimitRequestsHour - usedRPH
+					if rem < 0 { rem = 0 }
+					limits.RemainingRequestsHour = rem
 				}
 				if limits.LimitRequestsDay > 0 {
-					remRPD := limits.LimitRequestsDay - usedRPD
-					if remRPD < 0 {
-						remRPD = 0
-					}
-					limits.RemainingRequestsDay = remRPD
+					rem := limits.LimitRequestsDay - usedRPD
+					if rem < 0 { rem = 0 }
+					limits.RemainingRequestsDay = rem
 				}
 			} else {
-				// Fallback: if usage not found, set remaining equal to limits
+				// Fallback: if usage not found, set remaining equal to known limits
+				limits.RemainingRequestsMinute = limits.LimitRequestsMinute
+				limits.RemainingRequestsHour = limits.LimitRequestsHour
 				limits.RemainingRequestsDay = limits.LimitRequestsDay
 				limits.RemainingTokensMinute = limits.LimitTokensMinute
+				limits.RemainingTokensHour = limits.LimitTokensHour
+				limits.RemainingTokensDay = limits.LimitTokensDay
 			}
 		} else {
-			// Parsing usage failed; set remaining equal to limits
+			// Parsing usage failed; set remaining equal to known limits
+			limits.RemainingRequestsMinute = limits.LimitRequestsMinute
+			limits.RemainingRequestsHour = limits.LimitRequestsHour
 			limits.RemainingRequestsDay = limits.LimitRequestsDay
 			limits.RemainingTokensMinute = limits.LimitTokensMinute
+			limits.RemainingTokensHour = limits.LimitTokensHour
+			limits.RemainingTokensDay = limits.LimitTokensDay
 		}
 	} else {
-		// Usage request failed; set remaining equal to limits
+		// Usage request failed; set remaining equal to known limits
+		limits.RemainingRequestsMinute = limits.LimitRequestsMinute
+		limits.RemainingRequestsHour = limits.LimitRequestsHour
 		limits.RemainingRequestsDay = limits.LimitRequestsDay
 		limits.RemainingTokensMinute = limits.LimitTokensMinute
+		limits.RemainingTokensHour = limits.LimitTokensHour
+		limits.RemainingTokensDay = limits.LimitTokensDay
 	}
 
 	return limits, nil
@@ -287,6 +355,16 @@ func (c *Client) getMetricsWithAPIKey() (*RateLimitInfo, error) {
 		if _, err := fmt.Sscanf(reset, "%f", &val); err == nil {
 			rateLimitInfo.ResetTokensMinute = int64(val)
 		}
+	}
+
+	// Derive usage from remaining when possible
+	if rateLimitInfo.LimitRequestsDay > 0 && rateLimitInfo.RemainingRequestsDay >= 0 {
+		rateLimitInfo.UsageRequestsDay = rateLimitInfo.LimitRequestsDay - rateLimitInfo.RemainingRequestsDay
+		if rateLimitInfo.UsageRequestsDay < 0 { rateLimitInfo.UsageRequestsDay = 0 }
+	}
+	if rateLimitInfo.LimitTokensMinute > 0 && rateLimitInfo.RemainingTokensMinute >= 0 {
+		rateLimitInfo.UsageTokensMinute = rateLimitInfo.LimitTokensMinute - rateLimitInfo.RemainingTokensMinute
+		if rateLimitInfo.UsageTokensMinute < 0 { rateLimitInfo.UsageTokensMinute = 0 }
 	}
 
 	// If we got rate limit headers, return the rateLimitInfo even if the request failed

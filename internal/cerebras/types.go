@@ -6,12 +6,55 @@ import (
 
 // RateLimitInfo represents comprehensive rate limit information
 type RateLimitInfo struct {
-	LimitRequestsDay      int64 `json:"limit_requests_day,omitempty"`
-	LimitTokensMinute     int64 `json:"limit_tokens_minute,omitempty"`
-	RemainingRequestsDay  int64 `json:"remaining_requests_day,omitempty"`
+	// Limits (prefer GraphQL quotas; fall back to REST headers)
+	LimitRequestsMinute int64 `json:"limit_requests_minute,omitempty"`
+	LimitRequestsHour   int64 `json:"limit_requests_hour,omitempty"`
+	LimitRequestsDay    int64 `json:"limit_requests_day,omitempty"`
+
+	LimitTokensMinute int64 `json:"limit_tokens_minute,omitempty"`
+	LimitTokensHour   int64 `json:"limit_tokens_hour,omitempty"`
+	LimitTokensDay    int64 `json:"limit_tokens_day,omitempty"`
+
+	// Usage (prefer GraphQL usage; else derive as limit - remaining when available)
+	UsageRequestsMinute int64 `json:"usage_requests_minute,omitempty"`
+	UsageRequestsHour   int64 `json:"usage_requests_hour,omitempty"`
+	UsageRequestsDay    int64 `json:"usage_requests_day,omitempty"`
+
+	UsageTokensMinute int64 `json:"usage_tokens_minute,omitempty"`
+	UsageTokensHour   int64 `json:"usage_tokens_hour,omitempty"`
+	UsageTokensDay    int64 `json:"usage_tokens_day,omitempty"`
+
+	// Remaining (prefer REST headers when provided; otherwise computed)
+	RemainingRequestsMinute int64 `json:"remaining_requests_minute,omitempty"`
+	RemainingRequestsHour   int64 `json:"remaining_requests_hour,omitempty"`
+	RemainingRequestsDay    int64 `json:"remaining_requests_day,omitempty"`
+
 	RemainingTokensMinute int64 `json:"remaining_tokens_minute,omitempty"`
-	ResetRequestsDay      int64 `json:"reset_requests_day,omitempty"`
-	ResetTokensMinute     int64 `json:"reset_tokens_minute,omitempty"`
+	RemainingTokensHour   int64 `json:"remaining_tokens_hour,omitempty"`
+	RemainingTokensDay    int64 `json:"remaining_tokens_day,omitempty"`
+
+	// Reset (seconds until reset; REST often provides for minute/day)
+	ResetRequestsMinute int64 `json:"reset_requests_minute,omitempty"`
+	ResetRequestsHour   int64 `json:"reset_requests_hour,omitempty"`
+	ResetRequestsDay    int64 `json:"reset_requests_day,omitempty"`
+
+	ResetTokensMinute int64 `json:"reset_tokens_minute,omitempty"`
+	ResetTokensHour   int64 `json:"reset_tokens_hour,omitempty"`
+	ResetTokensDay    int64 `json:"reset_tokens_day,omitempty"`
+
+	// Metadata (from GraphQL quotas)
+	ModelId             string `json:"model_id,omitempty"`
+	RegionId            string `json:"region_id,omitempty"`
+	MaxSequenceLength   int64  `json:"max_sequence_length,omitempty"`
+	MaxCompletionTokens int64  `json:"max_completion_tokens,omitempty"`
+
+	// Backward compatibility fields
+	LimitRequestsDayOld      int64 `json:"limit_requests_day,omitempty"`
+	LimitTokensMinuteOld     int64 `json:"limit_tokens_minute,omitempty"`
+	RemainingRequestsDayOld  int64 `json:"remaining_requests_day,omitempty"`
+	RemainingTokensMinuteOld int64 `json:"remaining_tokens_minute,omitempty"`
+	ResetRequestsDayOld      int64 `json:"reset_requests_day,omitempty"`
+	ResetTokensMinuteOld     int64 `json:"reset_tokens_minute,omitempty"`
 }
 
 // ToQuota converts RateLimitInfo to Quota

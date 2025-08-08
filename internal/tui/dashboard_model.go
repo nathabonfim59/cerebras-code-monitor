@@ -234,16 +234,19 @@ func (m DashboardModel) renderDashboard() string {
         return fmt.Sprintf("%s Loading metrics...", icons.Info)
     }
 
-    // Calculate usage percentages
-    var requestsUsed, requestsPercent, tokensUsed, tokensPercent float64
-    if m.metrics.LimitRequestsDay > 0 {
-        requestsUsed = float64(m.metrics.LimitRequestsDay - m.metrics.RemainingRequestsDay)
-        requestsPercent = requestsUsed / float64(m.metrics.LimitRequestsDay) * 100
-    }
-
-    if m.metrics.LimitTokensMinute > 0 {
-        tokensUsed = float64(m.metrics.LimitTokensMinute - m.metrics.RemainingTokensMinute)
-        tokensPercent = tokensUsed / float64(m.metrics.LimitTokensMinute) * 100
+    // Helpers to compute used counts with GraphQL-first fallback strategy
+    usedFrom := func(usage, limit, remaining int64) int64 {
+        if usage > 0 {
+            return usage
+        }
+        if limit > 0 && remaining >= 0 {
+            u := limit - remaining
+            if u < 0 {
+                u = 0
+            }
+            return u
+        }
+        return 0
     }
 
     // Layout measurements
@@ -265,38 +268,68 @@ func (m DashboardModel) renderDashboard() string {
     dim := lipgloss.NewStyle().Foreground(styles.Palette.Subtle)
 
     // Progress rows
-    // widths for label, bar and value when in single column
+    // Layout: first line has label; second line has a full-width bar; third line has left-aligned percentage and right-aligned (used/limit).
     lblW := 16
-    valW := 14
-    barW := colW - lblW - valW - 4
+    // Make the progress bar span the entire card column width including brackets
+    // createProgressBar wraps content in [ and ], so subtract 2 to avoid wrapping
+    barW := colW - 2
     if barW < 10 {
         barW = 10
     }
 
-    requestsBar := m.createProgressBar(requestsPercent, barW)
-    tokensBar := m.createProgressBar(tokensPercent, barW)
+    // Helper to render a metric block (title, bar, stats) or Unknown when limit is missing
+    renderMetric := func(icon, name string, used, limit int64) []string {
+        titleRow := label.Width(lblW).Render(fmt.Sprintf("%s %s", icon, name))
+        if limit <= 0 {
+            return []string{titleRow, dim.Render("Unknown")}
+        }
+        percent := 0.0
+        if limit > 0 {
+            percent = float64(used) / float64(limit) * 100
+        }
+        bar := m.createProgressBar(percent, barW)
+        left := value.Render(fmt.Sprintf("%.1f%%", percent))
+        right := value.Render(fmt.Sprintf("(%d/%d)", used, limit))
+        middle := colW - lipgloss.Width(left) - lipgloss.Width(right)
+        if middle < 1 {
+            middle = 1
+        }
+        stats := lipgloss.JoinHorizontal(lipgloss.Top, left, strings.Repeat(" ", middle), right)
+        return []string{titleRow, bar, stats}
+    }
 
-    reqRow := lipgloss.JoinHorizontal(lipgloss.Top,
-        label.Width(lblW).Render(fmt.Sprintf("%s Daily Requests", icons.Request)),
-        "  ",
-        requestsBar,
-        "  ",
-        value.Width(valW).Align(lipgloss.Right).Render(fmt.Sprintf("%.1f%%  (%.0f/%d)", requestsPercent, requestsUsed, m.metrics.LimitRequestsDay)),
-    )
-    tokRow := lipgloss.JoinHorizontal(lipgloss.Top,
-        label.Width(lblW).Render(fmt.Sprintf("%s Minute Tokens", icons.Token)),
-        "  ",
-        tokensBar,
-        "  ",
-        value.Width(valW).Align(lipgloss.Right).Render(fmt.Sprintf("%.1f%%  (%.0f/%d)", tokensPercent, tokensUsed, m.metrics.LimitTokensMinute)),
-    )
+    // Compute used/limits for all relevant metrics
+    rpmLimit := m.metrics.LimitRequestsMinute
+    rphLimit := m.metrics.LimitRequestsHour
+    rpdLimit := m.metrics.LimitRequestsDay
+    tpmLimit := m.metrics.LimitTokensMinute
+    tphLimit := m.metrics.LimitTokensHour
+    tpdLimit := m.metrics.LimitTokensDay
 
-    // Card 1: Rate Limits
-    card1 := lipgloss.JoinVertical(lipgloss.Left,
-        title.Render("Rate Limits"),
-        reqRow,
-        tokRow,
-    )
+    rpmUsed := usedFrom(m.metrics.UsageRequestsMinute, rpmLimit, m.metrics.RemainingRequestsMinute)
+    rphUsed := usedFrom(m.metrics.UsageRequestsHour, rphLimit, m.metrics.RemainingRequestsHour)
+    rpdUsed := usedFrom(m.metrics.UsageRequestsDay, rpdLimit, m.metrics.RemainingRequestsDay)
+    tpmUsed := usedFrom(m.metrics.UsageTokensMinute, tpmLimit, m.metrics.RemainingTokensMinute)
+    tphUsed := usedFrom(m.metrics.UsageTokensHour, tphLimit, m.metrics.RemainingTokensHour)
+    tpdUsed := usedFrom(m.metrics.UsageTokensDay, tpdLimit, m.metrics.RemainingTokensDay)
+
+    // Card 1: Rate Limits (Requests & Tokens across minute/hour/day)
+    // Insert a blank line between metrics when in vertical (single column) layout
+    cardRows := []string{title.Render("Rate Limits")}
+    addMetric := func(rows []string) {
+        cardRows = append(cardRows, rows...)
+        if !twoCols {
+            cardRows = append(cardRows, "")
+        }
+    }
+    addMetric(renderMetric(icons.Request, "Requests / Minute", rpmUsed, rpmLimit))
+    addMetric(renderMetric(icons.Request, "Requests / Hour", rphUsed, rphLimit))
+    addMetric(renderMetric(icons.Request, "Requests / Day", rpdUsed, rpdLimit))
+    addMetric(renderMetric(icons.Token, "Tokens / Minute", tpmUsed, tpmLimit))
+    addMetric(renderMetric(icons.Token, "Tokens / Hour", tphUsed, tphLimit))
+    addMetric(renderMetric(icons.Token, "Tokens / Day", tpdUsed, tpdLimit))
+    // Trim trailing blank in two-column mode already avoided; in vertical it's fine to end with a blank
+    card1 := lipgloss.JoinVertical(lipgloss.Left, cardRows...)
 
     // Card 2: Quotas/Remaining
     // Define rows with label on left and value on right
