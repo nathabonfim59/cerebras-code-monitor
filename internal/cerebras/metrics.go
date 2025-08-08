@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -16,16 +17,19 @@ func (c *Client) GetMetrics(organization string) (*RateLimitInfo, error) {
 	}
 
 	// Determine which authentication method to use
-	// API key auth only works with REST API requests
+	// Prefer session token (GraphQL) when organization is provided, for live usage/quotas
+	if c.sessionToken != "" && organization != "" {
+		return c.getMetricsWithSessionToken(organization)
+	}
+
+	// Otherwise, fall back to API key (REST) which exposes rate limit headers
 	if c.apiKey != "" {
-		// API key doesn't need organization parameter
-		// Prioritize API key over session token for REST API usage
 		return c.getMetricsWithAPIKey()
 	}
 
-	// Session token auth only works with GraphQL requests
+	// As a last resort, if only session token is available but no organization provided
 	if c.sessionToken != "" {
-		return c.getMetricsWithSessionToken(organization)
+		return nil, fmt.Errorf("organization ID is required when using session token authentication")
 	}
 
 	return nil, fmt.Errorf("no valid authentication method found")
@@ -33,25 +37,34 @@ func (c *Client) GetMetrics(organization string) (*RateLimitInfo, error) {
 
 // getMetricsWithSessionToken fetches metrics using GraphQL with session token auth
 func (c *Client) getMetricsWithSessionToken(organization string) (*RateLimitInfo, error) {
-	// Make GraphQL request to get organization usage
-	query := `query GetOrganizationUsage($organizationId: String!) {
-		GetOrganizationUsage(organizationId: $organizationId) {
-			rateLimit {
-				limitRequestsDay
-				limitTokensMinute
-				remainingRequestsDay
-				remainingTokensMinute
-				resetRequestsDay
-				resetTokensMinute
-			}
-		}
-	}`
+	// Make GraphQL request to list organization usage quotas
+	// We will map the quota limits to our RateLimitInfo structure.
+	query := `query ListOrganizationUsageQuotas($organizationId: ID!, $modelId: ID, $regionId: ID) {
+  ListOrganizationUsageQuotas(
+    organizationId: $organizationId
+    modelId: $modelId
+    regionId: $regionId
+  ) {
+    modelId
+    regionId
+    organizationId
+    requestsPerMinute
+    tokensPerMinute
+    requestsPerHour
+    tokensPerHour
+    requestsPerDay
+    tokensPerDay
+    maxSequenceLength
+    maxCompletionTokens
+    __typename
+  }
+}`
 
 	variables := map[string]interface{}{
 		"organizationId": organization,
 	}
 
-	responseBody, err := c.MakeGraphQLRequest(query, variables)
+	responseBody, err := c.MakeGraphQLRequestWithDebug(query, variables, viper.GetBool("debug"))
 	if err != nil {
 		return nil, err
 	}
@@ -59,9 +72,7 @@ func (c *Client) getMetricsWithSessionToken(organization string) (*RateLimitInfo
 	// Parse the GraphQL response
 	var response struct {
 		Data struct {
-			GetOrganizationUsage struct {
-				RateLimit *RateLimitInfo `json:"rateLimit"`
-			} `json:"GetOrganizationUsage"`
+			ListOrganizationUsageQuotas []UsageQuota `json:"ListOrganizationUsageQuotas"`
 		} `json:"data"`
 	}
 
@@ -69,11 +80,118 @@ func (c *Client) getMetricsWithSessionToken(organization string) (*RateLimitInfo
 		return nil, fmt.Errorf("failed to parse GraphQL response: %w", err)
 	}
 
-	if response.Data.GetOrganizationUsage.RateLimit == nil {
+	// If no quotas returned, provide empty metrics
+	if len(response.Data.ListOrganizationUsageQuotas) == 0 {
 		return &RateLimitInfo{}, nil
 	}
 
-	return response.Data.GetOrganizationUsage.RateLimit, nil
+	// Try to find quota for configured model, otherwise use the first one
+	model := viper.GetString("model")
+	selected := response.Data.ListOrganizationUsageQuotas[0]
+	if model != "" {
+		for _, q := range response.Data.ListOrganizationUsageQuotas {
+			if q.ModelId == model {
+				selected = q
+				break
+			}
+		}
+	}
+
+	// Helper to parse string to int64; returns 0 on error or "-1" sentinel
+	parse := func(s string) int64 {
+		if s == "" {
+			return 0
+		}
+		v, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			return 0
+		}
+		if v < 0 { // treat -1 (unlimited) as 0 limit (unknown)
+			return 0
+		}
+		return v
+	}
+
+	limits := &RateLimitInfo{
+		LimitRequestsDay:      parse(selected.RequestsPerDay),
+		LimitTokensMinute:     parse(selected.TokensPerMinute),
+		RemainingRequestsDay:  0, // will compute below
+		RemainingTokensMinute: 0, // will compute below
+		ResetRequestsDay:      0,
+		ResetTokensMinute:     0,
+	}
+
+	// Additionally fetch current usage to compute "remaining" values so UI shows progress
+	usageQuery := `query ListOrganizationUsage($organizationId: ID!) {
+  ListOrganizationUsage(organizationId: $organizationId) {
+    modelId
+    regionId
+    rpm
+    tpm
+    rph
+    tph
+    rpd
+    tpd
+    __typename
+  }
+}`
+
+	usageBody, err := c.MakeGraphQLRequestWithDebug(usageQuery, map[string]interface{}{"organizationId": organization}, viper.GetBool("debug"))
+	if err == nil { // best-effort; if it fails, we still return limits
+		var usageResp struct {
+			Data struct {
+				ListOrganizationUsage []OrganizationUsage `json:"ListOrganizationUsage"`
+			} `json:"data"`
+		}
+		if err := json.Unmarshal(usageBody, &usageResp); err == nil {
+			// Match by model and (if available) region
+			var matched *OrganizationUsage
+			for i := range usageResp.Data.ListOrganizationUsage {
+				u := &usageResp.Data.ListOrganizationUsage[i]
+				if u.ModelId == selected.ModelId {
+					if selected.RegionId == "" || u.RegionId == selected.RegionId {
+						matched = u
+						break
+					}
+				}
+			}
+
+			if matched != nil {
+				// Parse token/minute usage and requests/day usage
+				usedTPM := parse(matched.TPM)
+				usedRPD := parse(matched.RPD)
+
+				if limits.LimitTokensMinute > 0 {
+					remTPM := limits.LimitTokensMinute - usedTPM
+					if remTPM < 0 {
+						remTPM = 0
+					}
+					limits.RemainingTokensMinute = remTPM
+				}
+				if limits.LimitRequestsDay > 0 {
+					remRPD := limits.LimitRequestsDay - usedRPD
+					if remRPD < 0 {
+						remRPD = 0
+					}
+					limits.RemainingRequestsDay = remRPD
+				}
+			} else {
+				// Fallback: if usage not found, set remaining equal to limits
+				limits.RemainingRequestsDay = limits.LimitRequestsDay
+				limits.RemainingTokensMinute = limits.LimitTokensMinute
+			}
+		} else {
+			// Parsing usage failed; set remaining equal to limits
+			limits.RemainingRequestsDay = limits.LimitRequestsDay
+			limits.RemainingTokensMinute = limits.LimitTokensMinute
+		}
+	} else {
+		// Usage request failed; set remaining equal to limits
+		limits.RemainingRequestsDay = limits.LimitRequestsDay
+		limits.RemainingTokensMinute = limits.LimitTokensMinute
+	}
+
+	return limits, nil
 }
 
 // getMetricsWithAPIKey fetches metrics using REST API with API key auth
