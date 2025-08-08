@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -255,7 +256,8 @@ func (m DashboardModel) renderDashboard() string {
         available = 40
     }
     gap := 2
-    twoCols := available >= 80
+    // Use a slightly higher breakpoint so two columns only activate on comfortably wide terminals
+    twoCols := available >= 96
     colW := available
     if twoCols {
         colW = (available - gap) / 2
@@ -278,8 +280,10 @@ func (m DashboardModel) renderDashboard() string {
     }
 
     // Helper to render a metric block (title, bar, stats) or Unknown when limit is missing
-    renderMetric := func(icon, name string, used, limit int64) []string {
-        titleRow := label.Width(lblW).Render(fmt.Sprintf("%s %s", icon, name))
+    // resetSecs: optional reset seconds shown centered in the stats row when > 0
+    renderMetric := func(icon, name string, used, limit, resetSecs int64) []string {
+        // Allow natural width for the title to avoid forced wrapping
+        titleRow := label.Render(fmt.Sprintf("%s %s", icon, name))
         if limit <= 0 {
             return []string{titleRow, dim.Render("Unknown")}
         }
@@ -289,12 +293,36 @@ func (m DashboardModel) renderDashboard() string {
         }
         bar := m.createProgressBar(percent, barW)
         left := value.Render(fmt.Sprintf("%.1f%%", percent))
-        right := value.Render(fmt.Sprintf("(%d/%d)", used, limit))
-        middle := colW - lipgloss.Width(left) - lipgloss.Width(right)
-        if middle < 1 {
-            middle = 1
+        right := value.Render(fmt.Sprintf("(%s/%s)", m.formatInt(used), m.formatInt(limit)))
+
+        // Build a centered middle area to optionally display reset information
+        center := ""
+        if resetSecs > 0 {
+            center = dim.Render(fmt.Sprintf("resets in %s", m.formatResetTime(resetSecs)))
         }
-        stats := lipgloss.JoinHorizontal(lipgloss.Top, left, strings.Repeat(" ", middle), right)
+        leftW := lipgloss.Width(left)
+        rightW := lipgloss.Width(right)
+        centerW := lipgloss.Width(center)
+        fillerW := colW - leftW - rightW
+        if fillerW < 1 {
+            fillerW = 1
+        }
+        var stats string
+        if centerW == 0 || centerW+2 > fillerW { // not enough room, omit center text
+            stats = lipgloss.JoinHorizontal(lipgloss.Top, left, strings.Repeat(" ", fillerW), right)
+        } else {
+            // Center the middle text between left and right blocks
+            leftPad := (fillerW - centerW) / 2
+            rightPad := fillerW - centerW - leftPad
+            stats = lipgloss.JoinHorizontal(
+                lipgloss.Top,
+                left,
+                strings.Repeat(" ", leftPad),
+                center,
+                strings.Repeat(" ", rightPad),
+                right,
+            )
+        }
         return []string{titleRow, bar, stats}
     }
 
@@ -322,12 +350,16 @@ func (m DashboardModel) renderDashboard() string {
             cardRows = append(cardRows, "")
         }
     }
-    addMetric(renderMetric(icons.Request, "Requests / Minute", rpmUsed, rpmLimit))
-    addMetric(renderMetric(icons.Request, "Requests / Hour", rphUsed, rphLimit))
-    addMetric(renderMetric(icons.Request, "Requests / Day", rpdUsed, rpdLimit))
-    addMetric(renderMetric(icons.Token, "Tokens / Minute", tpmUsed, tpmLimit))
-    addMetric(renderMetric(icons.Token, "Tokens / Hour", tphUsed, tphLimit))
-    addMetric(renderMetric(icons.Token, "Tokens / Day", tpdUsed, tpdLimit))
+    // Known reset timers (when available)
+    reqDayReset := m.metrics.ResetRequestsDay
+    tokMinReset := m.metrics.ResetTokensMinute
+
+    addMetric(renderMetric(icons.Request, "Requests/min", rpmUsed, rpmLimit, 0))
+    addMetric(renderMetric(icons.Request, "Requests/hr", rphUsed, rphLimit, 0))
+    addMetric(renderMetric(icons.Request, "Requests/day", rpdUsed, rpdLimit, reqDayReset))
+    addMetric(renderMetric(icons.Token, "Tokens/min", tpmUsed, tpmLimit, tokMinReset))
+    addMetric(renderMetric(icons.Token, "Tokens/hr", tphUsed, tphLimit, 0))
+    addMetric(renderMetric(icons.Token, "Tokens/day", tpdUsed, tpdLimit, 0))
     // Trim trailing blank in two-column mode already avoided; in vertical it's fine to end with a blank
     card1 := lipgloss.JoinVertical(lipgloss.Left, cardRows...)
 
@@ -358,12 +390,12 @@ func (m DashboardModel) renderDashboard() string {
 
     card2 := lipgloss.JoinVertical(lipgloss.Left,
         title.Render("Quotas & Remaining"),
-        lr("Daily Limit", fmt.Sprintf("%d", m.metrics.LimitRequestsDay)),
-        lr("Daily Remaining", fmt.Sprintf("%d", m.metrics.RemainingRequestsDay)),
+        lr("Daily Limit", m.formatInt(m.metrics.LimitRequestsDay)),
+        lr("Daily Remaining", m.formatInt(m.metrics.RemainingRequestsDay)),
         lr("Daily Reset", dailyReset),
         "",
-        lr("Minute Limit", fmt.Sprintf("%d", m.metrics.LimitTokensMinute)),
-        lr("Minute Remaining", fmt.Sprintf("%d", m.metrics.RemainingTokensMinute)),
+        lr("Minute Limit", m.formatInt(m.metrics.LimitTokensMinute)),
+        lr("Minute Remaining", m.formatInt(m.metrics.RemainingTokensMinute)),
         lr("Minute Reset", minuteReset),
     )
 
@@ -515,4 +547,32 @@ func (m DashboardModel) formatResetTime(seconds int64) string {
 	hours := seconds / 3600
 	minutes := (seconds % 3600) / 60
 	return fmt.Sprintf("%dh%dm", hours, minutes)
+}
+
+// formatInt prints an int64 with thousands separators for readability
+func (m DashboardModel) formatInt(n int64) string {
+    // Handle sign
+    sign := ""
+    if n < 0 {
+        sign = "-"
+        n = -n
+    }
+    s := strconv.FormatInt(n, 10)
+    // Group digits in threes from the right
+    l := len(s)
+    if l <= 3 {
+        return sign + s
+    }
+    first := l % 3
+    if first == 0 {
+        first = 3
+    }
+    var b strings.Builder
+    b.Grow(l + (l-1)/3)
+    b.WriteString(s[:first])
+    for i := first; i < l; i += 3 {
+        b.WriteByte(',')
+        b.WriteString(s[i : i+3])
+    }
+    return sign + b.String()
 }
