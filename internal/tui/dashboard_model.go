@@ -223,118 +223,137 @@ func (m DashboardModel) View() string {
 
 // renderDashboard renders the main dashboard content
 func (m DashboardModel) renderDashboard() string {
-	icons := config.GetIcons()
-	styles := GetStyles()
+    icons := config.GetIcons()
+    styles := GetStyles()
 
-	if m.err != nil {
-		return styles.Error.Render(fmt.Sprintf("Error: %v", m.err))
-	}
+    if m.err != nil {
+        return styles.Error.Render(fmt.Sprintf("Error: %v", m.err))
+    }
 
-	if m.metrics == nil {
-		return fmt.Sprintf("%s Loading metrics...", icons.Info)
-	}
+    if m.metrics == nil {
+        return fmt.Sprintf("%s Loading metrics...", icons.Info)
+    }
 
-	// Calculate usage percentages
-	var requestsUsed, requestsPercent, tokensUsed, tokensPercent float64
-	if m.metrics.LimitRequestsDay > 0 {
-		requestsUsed = float64(m.metrics.LimitRequestsDay - m.metrics.RemainingRequestsDay)
-		requestsPercent = requestsUsed / float64(m.metrics.LimitRequestsDay) * 100
-	}
+    // Calculate usage percentages
+    var requestsUsed, requestsPercent, tokensUsed, tokensPercent float64
+    if m.metrics.LimitRequestsDay > 0 {
+        requestsUsed = float64(m.metrics.LimitRequestsDay - m.metrics.RemainingRequestsDay)
+        requestsPercent = requestsUsed / float64(m.metrics.LimitRequestsDay) * 100
+    }
 
-	if m.metrics.LimitTokensMinute > 0 {
-		tokensUsed = float64(m.metrics.LimitTokensMinute - m.metrics.RemainingTokensMinute)
-		tokensPercent = tokensUsed / float64(m.metrics.LimitTokensMinute) * 100
-	}
+    if m.metrics.LimitTokensMinute > 0 {
+        tokensUsed = float64(m.metrics.LimitTokensMinute - m.metrics.RemainingTokensMinute)
+        tokensPercent = tokensUsed / float64(m.metrics.LimitTokensMinute) * 100
+    }
 
-	// Create progress bars
-	requestsBar := m.createProgressBar(requestsPercent, 30)
-	tokensBar := m.createProgressBar(tokensPercent, 30)
+    // Layout measurements
+    available := m.width - 2 // matches outer padding in View()
+    if available < 40 {
+        available = 40
+    }
+    gap := 2
+    twoCols := available >= 80
+    colW := available
+    if twoCols {
+        colW = (available - gap) / 2
+    }
 
-	// Determine status colors
-	requestsStatusColor := m.getStatusColor(requestsPercent)
-	tokensStatusColor := m.getStatusColor(tokensPercent)
+    // Base styles (muted, no backgrounds except progress bars)
+    title := styles.SectionTitle
+    label := lipgloss.NewStyle().Foreground(styles.Palette.Subtle)
+    value := lipgloss.NewStyle().Foreground(styles.Palette.Text).Bold(true)
+    dim := lipgloss.NewStyle().Foreground(styles.Palette.Subtle)
 
-	// Style the metrics display
-	metricStyle := lipgloss.NewStyle().MarginBottom(1).Align(lipgloss.Left)
-	requestsStyle := lipgloss.NewStyle().Foreground(requestsStatusColor).Align(lipgloss.Left)
-	tokensStyle := lipgloss.NewStyle().Foreground(tokensStatusColor).Align(lipgloss.Left)
+    // Progress rows
+    // widths for label, bar and value when in single column
+    lblW := 16
+    valW := 14
+    barW := colW - lblW - valW - 4
+    if barW < 10 {
+        barW = 10
+    }
 
-	// Render dashboard content
-	var s strings.Builder
-	s.WriteString(styles.SectionTitle.Render("Rate Limit Overview") + "\n\n")
+    requestsBar := m.createProgressBar(requestsPercent, barW)
+    tokensBar := m.createProgressBar(tokensPercent, barW)
 
-	s.WriteString("\n")
-	s.WriteString(requestsStyle.Align(lipgloss.Left).Render(fmt.Sprintf(
-		"%s Daily Requests: %s %.1f%% (%.0f/%d)",
-		icons.Request,
-		requestsBar,
-		requestsPercent,
-		requestsUsed,
-		m.metrics.LimitRequestsDay,
-	)))
-	s.WriteString("\n")
+    reqRow := lipgloss.JoinHorizontal(lipgloss.Top,
+        label.Width(lblW).Render(fmt.Sprintf("%s Daily Requests", icons.Request)),
+        "  ",
+        requestsBar,
+        "  ",
+        value.Width(valW).Align(lipgloss.Right).Render(fmt.Sprintf("%.1f%%  (%.0f/%d)", requestsPercent, requestsUsed, m.metrics.LimitRequestsDay)),
+    )
+    tokRow := lipgloss.JoinHorizontal(lipgloss.Top,
+        label.Width(lblW).Render(fmt.Sprintf("%s Minute Tokens", icons.Token)),
+        "  ",
+        tokensBar,
+        "  ",
+        value.Width(valW).Align(lipgloss.Right).Render(fmt.Sprintf("%.1f%%  (%.0f/%d)", tokensPercent, tokensUsed, m.metrics.LimitTokensMinute)),
+    )
 
-	s.WriteString(tokensStyle.Align(lipgloss.Left).Render(fmt.Sprintf(
-		"%s Minute Tokens: %s %.1f%% (%.0f/%d)",
-		icons.Token,
-		tokensBar,
-		tokensPercent,
-		tokensUsed,
-		m.metrics.LimitTokensMinute,
-	)))
-	s.WriteString("\n\n")
+    // Card 1: Rate Limits
+    card1 := lipgloss.JoinVertical(lipgloss.Left,
+        title.Render("Rate Limits"),
+        reqRow,
+        tokRow,
+    )
 
-	// Add detailed metrics
-	s.WriteString(metricStyle.Render(fmt.Sprintf("%s Daily Request Limit: %d", icons.Request, m.metrics.LimitRequestsDay)))
-	s.WriteString("\n")
-	s.WriteString(metricStyle.Render(fmt.Sprintf("%s Daily Requests Remaining: %d", icons.Request, m.metrics.RemainingRequestsDay)))
-	s.WriteString("\n")
+    // Card 2: Quotas/Remaining
+    // Define rows with label on left and value on right
+    lr := func(k string, v string) string {
+        return lipgloss.JoinHorizontal(lipgloss.Top,
+            label.Width(lblW).Render(k),
+            dim.Render(""),
+            value.Width(colW-lblW).Align(lipgloss.Right).Render(v),
+        )
+    }
 
-	if m.metrics.ResetRequestsDay > 0 {
-		resetDaily := time.Now().Add(time.Duration(m.metrics.ResetRequestsDay) * time.Second)
-		hoursUntilReset := int(m.metrics.ResetRequestsDay / 3600)
-		minutesUntilReset := int((m.metrics.ResetRequestsDay % 3600) / 60)
-		s.WriteString(metricStyle.Render(fmt.Sprintf(
-			"%s Daily Request Reset: %s (%d hours %d minutes)",
-			icons.Time,
-			resetDaily.Format("15:04:05"),
-			hoursUntilReset,
-			minutesUntilReset,
-		)))
-	} else {
-		s.WriteString(metricStyle.Render(fmt.Sprintf("%s Daily Request Reset: Unknown", icons.Warning)))
-	}
-	s.WriteString("\n\n")
+    // Daily request reset string
+    dailyReset := "Unknown"
+    if m.metrics.ResetRequestsDay > 0 {
+        resetDaily := time.Now().Add(time.Duration(m.metrics.ResetRequestsDay) * time.Second)
+        hours := int(m.metrics.ResetRequestsDay / 3600)
+        mins := int((m.metrics.ResetRequestsDay % 3600) / 60)
+        dailyReset = fmt.Sprintf("%s  (%dh %dm)", resetDaily.Format("15:04"), hours, mins)
+    }
+    // Minute token reset string
+    minuteReset := "Unknown"
+    if m.metrics.ResetTokensMinute > 0 {
+        resetMinute := time.Now().Add(time.Duration(m.metrics.ResetTokensMinute) * time.Second)
+        minuteReset = fmt.Sprintf("%s  (%ds)", resetMinute.Format("15:04:05"), int(m.metrics.ResetTokensMinute))
+    }
 
-	s.WriteString(metricStyle.Render(fmt.Sprintf("%s Minute Token Limit: %d", icons.Token, m.metrics.LimitTokensMinute)))
-	s.WriteString("\n")
-	s.WriteString(metricStyle.Render(fmt.Sprintf("%s Minute Tokens Remaining: %d", icons.Token, m.metrics.RemainingTokensMinute)))
-	s.WriteString("\n")
+    card2 := lipgloss.JoinVertical(lipgloss.Left,
+        title.Render("Quotas & Remaining"),
+        lr("Daily Limit", fmt.Sprintf("%d", m.metrics.LimitRequestsDay)),
+        lr("Daily Remaining", fmt.Sprintf("%d", m.metrics.RemainingRequestsDay)),
+        lr("Daily Reset", dailyReset),
+        "",
+        lr("Minute Limit", fmt.Sprintf("%d", m.metrics.LimitTokensMinute)),
+        lr("Minute Remaining", fmt.Sprintf("%d", m.metrics.RemainingTokensMinute)),
+        lr("Minute Reset", minuteReset),
+    )
 
-	if m.metrics.ResetTokensMinute > 0 {
-		resetMinute := time.Now().Add(time.Duration(m.metrics.ResetTokensMinute) * time.Second)
-		secondsUntilReset := int(m.metrics.ResetTokensMinute)
-		s.WriteString(metricStyle.Render(fmt.Sprintf(
-			"%s Minute Token Reset: %s (%d seconds)",
-			icons.Time,
-			resetMinute.Format("15:04:05"),
-			secondsUntilReset,
-		)))
-	} else {
-		s.WriteString(metricStyle.Render(fmt.Sprintf("%s Minute Token Reset: Unknown", icons.Warning)))
-	}
+    var content string
+    if twoCols {
+        left := lipgloss.NewStyle().Width(colW).Render(card1)
+        right := lipgloss.NewStyle().Width(colW).Render(card2)
+        content = lipgloss.JoinHorizontal(lipgloss.Top, left, strings.Repeat(" ", gap), right)
+    } else {
+        content = lipgloss.JoinVertical(lipgloss.Left, card1, "", card2)
+    }
 
-	return s.String()
+    return content
 }
 
 // renderUsage renders the usage tab content
 func (m DashboardModel) renderUsage() string {
-	icons := config.GetIcons()
-	styles := GetStyles()
+    icons := config.GetIcons()
+    styles := GetStyles()
 
-	if m.metrics == nil {
-		return fmt.Sprintf("%s Loading usage data...", icons.Info)
-	}
+    if m.metrics == nil {
+        return fmt.Sprintf("%s Loading usage data...", icons.Info)
+    }
 
 	// Calculate usage
 	var requestsUsed float64
