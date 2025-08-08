@@ -7,7 +7,7 @@ import (
 
 // Keep the primary Cerebras brand color available within the package.
 var (
-    primaryColor = lipgloss.Color("rgb(241, 90, 41)") // Cerebras Orange
+    primaryColor = lipgloss.Color("#F15A29") // Cerebras Orange (hex)
 )
 
 // Palette defines the color set used across the TUI.
@@ -82,15 +82,18 @@ func GetStyles() Styles {
     return Styles{
         Palette: pal,
         Header: lipgloss.NewStyle().
+            Background(lipgloss.Color("#1a1a1a")).
             Bold(true).
             Padding(0, 0).
             Height(1),
         TabInactive: lipgloss.NewStyle().
             Foreground(pal.Subtle).
+            Background(lipgloss.Color("#1a1a1a")).
             Padding(0, 2).
             MarginRight(1),
         TabActive: lipgloss.NewStyle().
-            Foreground(lipgloss.Color("#ffffff")).
+            Foreground(pal.Text).
+            Background(lipgloss.Color("#262626")).
             Bold(true).
             Padding(0, 2).
             MarginRight(1),

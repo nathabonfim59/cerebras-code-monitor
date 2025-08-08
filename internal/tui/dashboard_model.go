@@ -148,9 +148,9 @@ func (m DashboardModel) View() string {
 		MaxWidth(innerWidth)
 
 	// Calculate content height to fill the screen within outer padding.
-	// 1 line for title, 1 line for tabs, 1 line for status bar => 3 lines.
+	// 1 line for title, 1 blank spacer line, 1 line for tabs, 1 line for status bar => 4 lines.
 	innerHeight := m.height - (2 * outerPadY)
-	contentHeight := innerHeight - 3
+	contentHeight := innerHeight - 4
 	if contentHeight < 1 {
 		contentHeight = 1
 	}
@@ -161,8 +161,16 @@ func (m DashboardModel) View() string {
 		Height(contentHeight).
 		Align(lipgloss.Left)
 
-	// Render header with title (no leading space for full-width alignment)
-	title := titleStyle.Render(fmt.Sprintf("%s Cerebras Code Monitor Dashboard", icons.Dashboard))
+	// Render header with specific coloring: icon + "Cerebras" in primary, rest in subtle.
+    // Use Header.Copy() for segments so they keep the same background and do not reset it.
+    brandPrimary := styles.Header.Copy().Foreground(styles.Palette.Primary)
+    headerSubtle := styles.Header.Copy().Foreground(styles.Palette.Subtle)
+
+    iconText := brandPrimary.Render(fmt.Sprintf(" %s", icons.Dashboard)) // leading space before icon
+    brandText := brandPrimary.Render(" Cerebras")
+    restText := headerSubtle.Render(" Code Monitor Dashboard")
+    headerLine := lipgloss.JoinHorizontal(lipgloss.Left, iconText, brandText, restText)
+    title := titleStyle.Render(headerLine)
 
 	// Render tabs
 	var tabs []string
@@ -197,10 +205,12 @@ func (m DashboardModel) View() string {
 			icons.Model, m.modelName,
 			icons.Time, m.refreshRate))
 
-	// Combine all elements
+	// Combine all elements (add a blank spacer line after the header)
+	spacer := ""
 	view := lipgloss.JoinVertical(
 		lipgloss.Left,
 		title,
+		spacer,
 		tabRow,
 		contentStyle.Render(content),
 		statusBar,
