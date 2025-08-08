@@ -82,28 +82,21 @@ func GetStyles() Styles {
     return Styles{
         Palette: pal,
         Header: lipgloss.NewStyle().
-            Foreground(pal.Text).
-            Background(pal.Surface).
             Bold(true).
             Padding(0, 0).
             Height(1),
         TabInactive: lipgloss.NewStyle().
             Foreground(pal.Subtle).
-            Background(pal.Bg).
             Padding(0, 2).
             MarginRight(1),
         TabActive: lipgloss.NewStyle().
             Foreground(lipgloss.Color("#ffffff")).
-            Background(pal.Primary).
             Bold(true).
             Padding(0, 2).
             MarginRight(1),
         StatusBar: lipgloss.NewStyle().
-            Foreground(pal.Text).
-            Background(pal.Surface).
             Padding(0, 0),
         Content: lipgloss.NewStyle().
-            Background(pal.Bg).
             Padding(0, 0),
         SectionTitle: lipgloss.NewStyle().
             Bold(true).
@@ -118,7 +111,7 @@ func GetStyles() Styles {
         Error: lipgloss.NewStyle().Foreground(pal.Error),
         Info:  lipgloss.NewStyle().Foreground(pal.Subtle),
         ListItem:     lipgloss.NewStyle().Foreground(pal.Text),
-        ListSelected: lipgloss.NewStyle().Foreground(pal.Text).Background(pal.Primary).Bold(true),
+        ListSelected: lipgloss.NewStyle().Foreground(pal.Text).Bold(true),
         ListCursor:   lipgloss.NewStyle().Foreground(pal.Primary).Bold(true),
         ProgressEmpty: lipgloss.NewStyle().Foreground(pal.Muted),
         Key:  lipgloss.NewStyle().Foreground(pal.Text).Bold(true),

@@ -126,10 +126,17 @@ func (m DashboardModel) View() string {
 	icons := config.GetIcons()
 	styles := GetStyles()
 
+	// Apply uniform outer padding around the entire view
+	outerPadX, outerPadY := 1, 1
+	innerWidth := m.width - (2 * outerPadX)
+	if innerWidth < 1 {
+		innerWidth = 1
+	}
+
 	// Define styles using centralized theme
 	titleStyle := styles.Header.Copy().
-		Width(m.width).
-		MaxWidth(m.width).
+		Width(innerWidth).
+		MaxWidth(innerWidth).
 		Align(lipgloss.Left)
 
 	tabStyle := styles.TabInactive
@@ -137,20 +144,20 @@ func (m DashboardModel) View() string {
 	activeTabStyle := styles.TabActive
 
 	statusBarStyle := styles.StatusBar.Copy().
-		Width(m.width).
-		MaxWidth(m.width)
+		Width(innerWidth).
+		MaxWidth(innerWidth)
 
-	// Calculate content height to fill the screen. We have:
+	// Calculate content height to fill the screen within outer padding.
 	// 1 line for title, 1 line for tabs, 1 line for status bar => 3 lines.
-	// Any padding is handled by styles. So subtract 3, not 6.
-	contentHeight := m.height - 3
+	innerHeight := m.height - (2 * outerPadY)
+	contentHeight := innerHeight - 3
 	if contentHeight < 1 {
 		contentHeight = 1
 	}
 
 	contentStyle := styles.Content.Copy().
-		Width(m.width).
-		MaxWidth(m.width).
+		Width(innerWidth).
+		MaxWidth(innerWidth).
 		Height(contentHeight).
 		Align(lipgloss.Left)
 
@@ -199,7 +206,9 @@ func (m DashboardModel) View() string {
 		statusBar,
 	)
 
-	return view
+	// Wrap the entire view with outer padding
+	outer := lipgloss.NewStyle().Padding(outerPadY, outerPadX)
+	return outer.Render(view)
 }
 
 // renderDashboard renders the main dashboard content
