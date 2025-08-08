@@ -85,7 +85,7 @@ func GetStyles() Styles {
             Foreground(pal.Text).
             Background(pal.Surface).
             Bold(true).
-            Padding(0, 1).
+            Padding(0, 0).
             Height(1),
         TabInactive: lipgloss.NewStyle().
             Foreground(pal.Subtle).
@@ -101,10 +101,10 @@ func GetStyles() Styles {
         StatusBar: lipgloss.NewStyle().
             Foreground(pal.Text).
             Background(pal.Surface).
-            Padding(0, 1),
+            Padding(0, 0),
         Content: lipgloss.NewStyle().
             Background(pal.Bg).
-            Padding(1, 2),
+            Padding(0, 0),
         SectionTitle: lipgloss.NewStyle().
             Bold(true).
             Foreground(pal.Primary),

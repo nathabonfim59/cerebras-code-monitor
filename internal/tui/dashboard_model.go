@@ -42,6 +42,7 @@ func NewDashboardModel(client *cerebras.Client, organization, modelName string, 
 func (m DashboardModel) Init() tea.Cmd {
 	// Start the ticker for refreshing data
 	return tea.Batch(
+		tea.ClearScreen,
 		m.fetchMetrics(),
 		tea.Tick(time.Duration(m.refreshRate)*time.Second, func(t time.Time) tea.Msg {
 			return tickMsg(t)
@@ -128,7 +129,8 @@ func (m DashboardModel) View() string {
 	// Define styles using centralized theme
 	titleStyle := styles.Header.Copy().
 		Width(m.width).
-		MaxWidth(m.width)
+		MaxWidth(m.width).
+		Align(lipgloss.Left)
 
 	tabStyle := styles.TabInactive
 
@@ -138,9 +140,12 @@ func (m DashboardModel) View() string {
 		Width(m.width).
 		MaxWidth(m.width)
 
-	contentHeight := m.height - 6
-	if contentHeight < 4 {
-		contentHeight = 4
+	// Calculate content height to fill the screen. We have:
+	// 1 line for title, 1 line for tabs, 1 line for status bar => 3 lines.
+	// Any padding is handled by styles. So subtract 3, not 6.
+	contentHeight := m.height - 3
+	if contentHeight < 1 {
+		contentHeight = 1
 	}
 
 	contentStyle := styles.Content.Copy().
@@ -149,8 +154,8 @@ func (m DashboardModel) View() string {
 		Height(contentHeight).
 		Align(lipgloss.Left)
 
-	// Render header with title
-	title := titleStyle.Render(fmt.Sprintf(" %s Cerebras Code Monitor Dashboard", icons.Dashboard))
+	// Render header with title (no leading space for full-width alignment)
+	title := titleStyle.Render(fmt.Sprintf("%s Cerebras Code Monitor Dashboard", icons.Dashboard))
 
 	// Render tabs
 	var tabs []string

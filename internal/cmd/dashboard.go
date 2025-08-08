@@ -46,7 +46,7 @@ var DashboardCmd = &cobra.Command{
 
 		// Create and run the dashboard model
 		dashboardModel := tui.NewDashboardModel(client, organization, modelName, refreshRate)
-		p := tea.NewProgram(dashboardModel)
+		p := tea.NewProgram(dashboardModel, tea.WithAltScreen())
 		if _, err := p.Run(); err != nil {
 			fmt.Printf("Error running dashboard: %v\n", err)
 			return
