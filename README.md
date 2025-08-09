@@ -38,23 +38,38 @@ Cerebras enforces rate limits per API key with the following headers available i
 
 ## Installation
 
-### Prerequisites
+### Quick Install (Recommended)
 
-- Go 1.24.5 or higher
-- Valid Cerebras session token
+**Linux/macOS:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/nathabonfim59/cerebras-code-monitor/main/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+iwr -useb https://raw.githubusercontent.com/nathabonfim59/cerebras-code-monitor/main/install.ps1 | iex
+```
+
+### Manual Download
+
+Download the latest release for your platform from the [releases page](https://github.com/nathabonfim59/cerebras-code-monitor/releases).
 
 ### Building from Source
+
+**Prerequisites:**
+- Go 1.24.5 or higher
+- Valid Cerebras session token
 
 ```bash
 git clone https://github.com/nathabonfim59/cerebras-code-monitor.git
 cd cerebras-code-monitor
-go build -o cerebras-monitor main.go
+go build -o cerebras-monitor cmd/main.go
 ```
 
 ### Using Go Install
 
 ```bash
-go install github.com/nathabonfim59/cerebras-code-monitor@latest
+go install github.com/nathabonfim59/cerebras-code-monitor/cmd@latest
 ```
 
 ## Usage
