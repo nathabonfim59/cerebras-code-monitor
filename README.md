@@ -6,14 +6,20 @@ Real-time monitoring tool for Cerebras AI usage with rate limit tracking. Track 
 
 ## Features
 
-- Real-time monitoring of Cerebras API usage
-- Rate limit tracking via response headers
-- Configurable refresh rates with intelligent display updates
-- Advanced terminal UI with color-coded progress bars and tables
-- Multi-level warning system when approaching limits
-- Automatic timezone detection and 12h/24h time format preferences
-- Professional architecture with modular design
-- Comprehensive logging capabilities
+**Currently Available:**
+- Organization selection and management
+- Real-time dashboard for monitoring Cerebras AI usage
+- Usage statistics display with rate limit information
+- Session token and API key authentication
+- Configuration management
+
+**To Be Implemented:**
+- Request interception proxy for automatic rate limit tracking
+- Enhanced dashboard with color-coded progress bars and warnings
+- Real-time monitoring alerts when approaching limits
+- Historical usage tracking and trends
+- Multiple refresh rate options
+- Advanced logging and export capabilities
 
 ## Cerebras Rate Limits
 
