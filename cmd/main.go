@@ -10,14 +10,20 @@ import (
 	"github.com/spf13/viper"
 )
 
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 var rootCmd = &cobra.Command{
 	Use:   "cerebras-monitor",
 	Short: "A tool to monitor Cerebras AI usage",
 	Long:  "Real-time monitoring tool for Cerebras AI usage with rate limit tracking. Track your token consumption and request limits with predictions and warnings.",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Check if version flag is set
-		if version, _ := cmd.Flags().GetBool("version"); version {
-			fmt.Println("cerebras-code-monitor v0.1.0")
+		if showVersion, _ := cmd.Flags().GetBool("version"); showVersion {
+			fmt.Printf("cerebras-code-monitor %s (commit: %s, built: %s)\n", version, commit, date)
 			return
 		}
 

@@ -159,6 +159,28 @@ Built with Go using spf13 libraries:
 go build -o cerebras-monitor main.go
 ```
 
+### Release with Goreleaser
+
+To create a new release with Goreleaser:
+
+```bash
+# Create a new tag
+git tag -a v0.1.0 -m "v0.1.0"
+
+# Release with Goreleaser
+make release
+```
+
+For testing releases locally without publishing:
+```bash
+make release-dry
+```
+
+To create a snapshot release:
+```bash
+make snapshot
+```
+
 ### Testing
 
 ```bash

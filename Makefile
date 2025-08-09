@@ -65,6 +65,21 @@ build-all: clean
 install: build
 	go install ./cmd/main.go
 
+# Release using Goreleaser
+.PHONY: release
+release:
+	goreleaser release --clean
+
+# Dry run release using Goreleaser
+.PHONY: release-dry
+release-dry:
+	goreleaser release --clean --skip-publish
+
+# Snapshot release using Goreleaser
+.PHONY: snapshot
+snapshot:
+	goreleaser release --clean --snapshot
+
 # Help target
 .PHONY: help
 help:
@@ -80,4 +95,7 @@ help:
 	@echo "  clean         - Clean build artifacts"
 	@echo "  build-all     - Build for multiple platforms"
 	@echo "  install       - Install the binary"
+	@echo "  release       - Create a new release using Goreleaser"
+	@echo "  release-dry   - Run Goreleaser in dry-run mode"
+	@echo "  snapshot      - Create a snapshot release"
 	@echo "  help          - Show this help message"

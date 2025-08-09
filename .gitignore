@@ -1,2 +1,7 @@
 .tmp
 .env
+.crush/
+
+# Goreleaser
+dist/
+release/
