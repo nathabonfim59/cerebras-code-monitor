@@ -164,12 +164,12 @@ go build -o cerebras-monitor main.go
 To create a new release with Goreleaser:
 
 ```bash
-# Create a new tag
+# Create and push a new tag
 git tag -a v0.1.0 -m "v0.1.0"
-
-# Release with Goreleaser
-make release
+git push origin v0.1.0
 ```
+
+The release will be automatically created by the GitHub Actions workflow.
 
 For testing releases locally without publishing:
 ```bash

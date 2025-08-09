@@ -1,10 +1,10 @@
 # .goreleaser.yml
+version: 2
 project_name: cerebras-code-monitor
 
 before:
   hooks:
     - go mod tidy
-    - go generate ./...
 
 builds:
   - main: ./cmd/main.go
@@ -22,8 +22,7 @@ builds:
       - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=goreleaser
 
 archives:
-  - format: tar.gz
-    # this name template makes the OS and Arch compatible with the results of `uname`.
+  - # this name template makes the OS and Arch compatible with the results of `uname`.
     name_template: >-
       {{ .ProjectName }}_
       {{- title .Os }}_
@@ -31,11 +30,12 @@ archives:
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
       {{- if .Arm }}v{{ .Arm }}{{ end }}
-      {{- if .Mips }}_{{ .Mips }}{{ end }}
-    # use zip for windows archives
+    formats:
+      - tar.gz
     format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
 
 changelog:
   sort: asc

@@ -73,7 +73,7 @@ release:
 # Dry run release using Goreleaser
 .PHONY: release-dry
 release-dry:
-	goreleaser release --clean --skip-publish
+	goreleaser release --clean --skip=publish,validate
 
 # Snapshot release using Goreleaser
 .PHONY: snapshot

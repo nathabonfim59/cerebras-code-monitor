@@ -5,3 +5,6 @@
 # Goreleaser
 dist/
 release/
+
+# GitHub Actions
+.github/
