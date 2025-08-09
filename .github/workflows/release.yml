@@ -30,11 +30,11 @@ jobs:
 
       - name: Build Linux AMD64
         run: |
-          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o build/cerebras-code-monitor-linux-amd64 ./cmd/main.go
+          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w -X main.version=${GITHUB_REF_NAME} -X main.commit=${GITHUB_SHA::8} -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" -o build/cerebras-code-monitor-linux-amd64 ./cmd/main.go
 
       - name: Build Linux ARM64
         run: |
-          CGO_ENABLED=1 GOOS=linux GOARCH=arm64 CC=aarch64-linux-gnu-gcc go build -ldflags="-s -w" -o build/cerebras-code-monitor-linux-arm64 ./cmd/main.go
+          CGO_ENABLED=1 GOOS=linux GOARCH=arm64 CC=aarch64-linux-gnu-gcc go build -ldflags="-s -w -X main.version=${GITHUB_REF_NAME} -X main.commit=${GITHUB_SHA::8} -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" -o build/cerebras-code-monitor-linux-arm64 ./cmd/main.go
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
@@ -58,11 +58,11 @@ jobs:
 
       - name: Build macOS AMD64
         run: |
-          CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o build/cerebras-code-monitor-darwin-amd64 ./cmd/main.go
+          CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w -X main.version=${GITHUB_REF_NAME} -X main.commit=${GITHUB_SHA::8} -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" -o build/cerebras-code-monitor-darwin-amd64 ./cmd/main.go
 
       - name: Build macOS ARM64
         run: |
-          CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o build/cerebras-code-monitor-darwin-arm64 ./cmd/main.go
+          CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w -X main.version=${GITHUB_REF_NAME} -X main.commit=${GITHUB_SHA::8} -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" -o build/cerebras-code-monitor-darwin-arm64 ./cmd/main.go
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
@@ -98,7 +98,9 @@ jobs:
           $env:GOARCH="amd64"
           $env:PATH = "C:\msys64\mingw64\bin;$env:PATH"
           $env:CC="gcc"
-          go build -ldflags="-s -w" -o build/cerebras-code-monitor-windows-amd64.exe ./cmd/main.go
+          $commit = "$env:GITHUB_SHA".Substring(0, 8)
+          $date = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+          go build -ldflags="-s -w -X main.version=$env:GITHUB_REF_NAME -X main.commit=$commit -X main.date=$date" -o build/cerebras-code-monitor-windows-amd64.exe ./cmd/main.go
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
