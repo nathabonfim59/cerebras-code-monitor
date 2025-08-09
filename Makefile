@@ -60,35 +60,35 @@ clean:
 	rm -f $(BINARY_NAME)
 	rm -rf $(BUILD_DIR)
 
-# Build for multiple platforms
+# Build for multiple platforms with CGO support
 .PHONY: build-all
 build-all: clean
 	mkdir -p $(BUILD_DIR)
-	GOOS=linux GOARCH=amd64 go build -o $(BUILD_DIR)/$(BINARY_NAME)-linux-amd64 $(MAIN_FILE)
-	GOOS=linux GOARCH=arm64 go build -o $(BUILD_DIR)/$(BINARY_NAME)-linux-arm64 $(MAIN_FILE)
-	GOOS=darwin GOARCH=amd64 go build -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-amd64 $(MAIN_FILE)
-	GOOS=darwin GOARCH=arm64 go build -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-arm64 $(MAIN_FILE)
-	GOOS=windows GOARCH=amd64 go build -o $(BUILD_DIR)/$(BINARY_NAME)-windows-amd64.exe $(MAIN_FILE)
+	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o $(BUILD_DIR)/$(BINARY_NAME)-linux-amd64 $(MAIN_FILE)
+	CGO_ENABLED=1 GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o $(BUILD_DIR)/$(BINARY_NAME)-linux-arm64 $(MAIN_FILE)
+	CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-amd64 $(MAIN_FILE)
+	CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-arm64 $(MAIN_FILE)
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o $(BUILD_DIR)/$(BINARY_NAME)-windows-amd64.exe $(MAIN_FILE)
+	CGO_ENABLED=0 GOOS=windows GOARCH=arm64 go build -ldflags="-s -w" -o $(BUILD_DIR)/$(BINARY_NAME)-windows-arm64.exe $(MAIN_FILE)
 
 # Install the binary
 .PHONY: install
 install: build
 	go install ./cmd/main.go
 
-# Release using Goreleaser
+# Create GitHub release (manual build process)
 .PHONY: release
 release:
-	goreleaser release --clean
+	@echo "Releases are now created via GitHub Actions when you push a tag."
+	@echo "To create a release:"
+	@echo "  1. git tag v1.0.0"
+	@echo "  2. git push origin v1.0.0"
+	@echo "The GitHub Action will automatically build and release for all platforms."
 
-# Dry run release using Goreleaser
-.PHONY: release-dry
-release-dry:
-	goreleaser release --clean --skip=publish,validate
-
-# Snapshot release using Goreleaser
+# Build local snapshot for testing
 .PHONY: snapshot
-snapshot:
-	goreleaser release --clean --snapshot
+snapshot: build-all
+	@echo "Local snapshot built in $(BUILD_DIR)/"
 
 # Help target
 .PHONY: help
@@ -105,7 +105,6 @@ help:
 	@echo "  clean         - Clean build artifacts"
 	@echo "  build-all     - Build for multiple platforms"
 	@echo "  install       - Install the binary"
-	@echo "  release       - Create a new release using Goreleaser"
-	@echo "  release-dry   - Run Goreleaser in dry-run mode"
-	@echo "  snapshot      - Create a snapshot release"
+	@echo "  release       - Show instructions for creating a GitHub release"
+	@echo "  snapshot      - Build local snapshot for testing"
 	@echo "  help          - Show this help message"

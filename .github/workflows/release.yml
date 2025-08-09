@@ -9,8 +9,8 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    name: Release
+  build-linux:
+    name: Build Linux binaries
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -23,11 +23,122 @@ jobs:
         with:
           go-version: '1.24.5'
 
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Build Linux AMD64
+        run: |
+          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o build/cerebras-code-monitor-linux-amd64 ./cmd/main.go
+
+      - name: Build Linux ARM64
+        run: |
+          CGO_ENABLED=1 GOOS=linux GOARCH=arm64 CC=aarch64-linux-gnu-gcc go build -ldflags="-s -w" -o build/cerebras-code-monitor-linux-arm64 ./cmd/main.go
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
         with:
-          distribution: goreleaser
-          version: latest
-          args: release --clean
+          name: linux-binaries
+          path: build/cerebras-code-monitor-linux-*
+
+  build-macos:
+    name: Build macOS binaries
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.5'
+
+      - name: Build macOS AMD64
+        run: |
+          CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o build/cerebras-code-monitor-darwin-amd64 ./cmd/main.go
+
+      - name: Build macOS ARM64
+        run: |
+          CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o build/cerebras-code-monitor-darwin-arm64 ./cmd/main.go
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-binaries
+          path: build/cerebras-code-monitor-darwin-*
+
+  build-windows:
+    name: Build Windows binaries
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.5'
+
+      - name: Build Windows AMD64
+        run: |
+          $env:CGO_ENABLED="0"
+          $env:GOOS="windows"
+          $env:GOARCH="amd64"
+          go build -ldflags="-s -w" -o build/cerebras-code-monitor-windows-amd64.exe ./cmd/main.go
+
+      - name: Build Windows ARM64
+        run: |
+          $env:CGO_ENABLED="0"
+          $env:GOOS="windows"
+          $env:GOARCH="arm64"
+          go build -ldflags="-s -w" -o build/cerebras-code-monitor-windows-arm64.exe ./cmd/main.go
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-binaries
+          path: build/cerebras-code-monitor-windows-*
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [build-linux, build-macos, build-windows]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release
+
+          # Linux binaries
+          tar -czf release/cerebras-code-monitor-linux-amd64.tar.gz -C artifacts/linux-binaries cerebras-code-monitor-linux-amd64
+          tar -czf release/cerebras-code-monitor-linux-arm64.tar.gz -C artifacts/linux-binaries cerebras-code-monitor-linux-arm64
+
+          # macOS binaries
+          tar -czf release/cerebras-code-monitor-darwin-amd64.tar.gz -C artifacts/macos-binaries cerebras-code-monitor-darwin-amd64
+          tar -czf release/cerebras-code-monitor-darwin-arm64.tar.gz -C artifacts/macos-binaries cerebras-code-monitor-darwin-arm64
+
+          # Windows binaries
+          cd artifacts/windows-binaries && zip ../../release/cerebras-code-monitor-windows-amd64.zip cerebras-code-monitor-windows-amd64.exe && cd ../..
+          cd artifacts/windows-binaries && zip ../../release/cerebras-code-monitor-windows-arm64.zip cerebras-code-monitor-windows-arm64.exe && cd ../..
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
