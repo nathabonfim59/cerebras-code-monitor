@@ -39,6 +39,9 @@ That's it!
 - **Token consumption monitoring** - Track every request
 - **Clean terminal interface** - Beautiful, responsive display
 
+<img width="1909" height="641" alt="image" src="https://github.com/user-attachments/assets/a760f826-daec-4c67-bc02-fca9e7f1d6ab" />
+
+
 ## Coming Soon
 - Automatic request interception
 - Smart alerts and warnings
