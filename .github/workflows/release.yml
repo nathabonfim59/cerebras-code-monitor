@@ -84,25 +84,27 @@ jobs:
         with:
           go-version: '1.24.5'
 
+      - name: Set up MinGW for CGO
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-pkg-config
+
       - name: Build Windows AMD64
         run: |
-          $env:CGO_ENABLED="0"
+          $env:CGO_ENABLED="1"
           $env:GOOS="windows"
           $env:GOARCH="amd64"
+          $env:PATH = "C:\msys64\mingw64\bin;$env:PATH"
+          $env:CC="gcc"
           go build -ldflags="-s -w" -o build/cerebras-code-monitor-windows-amd64.exe ./cmd/main.go
-
-      - name: Build Windows ARM64
-        run: |
-          $env:CGO_ENABLED="0"
-          $env:GOOS="windows"
-          $env:GOARCH="arm64"
-          go build -ldflags="-s -w" -o build/cerebras-code-monitor-windows-arm64.exe ./cmd/main.go
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-binaries
-          path: build/cerebras-code-monitor-windows-*
+          path: build/cerebras-code-monitor-windows-amd64.exe
 
   release:
     name: Create Release
@@ -133,7 +135,6 @@ jobs:
 
           # Windows binaries
           cd artifacts/windows-binaries && zip ../../release/cerebras-code-monitor-windows-amd64.zip cerebras-code-monitor-windows-amd64.exe && cd ../..
-          cd artifacts/windows-binaries && zip ../../release/cerebras-code-monitor-windows-arm64.zip cerebras-code-monitor-windows-arm64.exe && cd ../..
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
