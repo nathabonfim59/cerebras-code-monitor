@@ -2,143 +2,119 @@
 
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/nathabonfim59/cerebras-code-monitor)](https://github.com/nathabonfim59/cerebras-code-monitor/releases)
 
-Real-time monitoring tool for Cerebras AI usage with rate limit tracking. Track your token consumption and request limits with predictions and warnings.
+**Never run out of tokens again!** Monitor your Cerebras AI usage in real-time with rate limit tracking, usage predictions, and warnings before you hit your limits.
 
 <img width="543" height="1063" alt="image" src="https://github.com/user-attachments/assets/69fe1072-478b-48e0-86b4-a8ab2f71f1f4" />
 
-## Features
+## Quick Start
 
-**Currently Available:**
-- Organization selection and management
-- Real-time dashboard for monitoring Cerebras AI usage
-- Usage statistics display with rate limit information
-- Session token and API key authentication
-- Configuration management
-
-**To Be Implemented:**
-- Request interception proxy for automatic rate limit tracking
-- Enhanced dashboard with color-coded progress bars and warnings
-- Real-time monitoring alerts when approaching limits
-- Historical usage tracking and trends
-- Multiple refresh rate options
-- Advanced logging and export capabilities
-
-## Cerebras Rate Limits
-
-Cerebras enforces rate limits per API key with the following headers available in API responses:
-
-| Header | Description |
-|--------|-------------|
-| `x-ratelimit-limit-requests-day` | Maximum number of requests allowed per day |
-| `x-ratelimit-limit-tokens-minute` | Maximum number of tokens allowed per minute |
-| `x-ratelimit-remaining-requests-day` | Number of requests remaining for the current day |
-| `x-ratelimit-remaining-tokens-minute` | Number of tokens remaining for the current minute |
-| `x-ratelimit-reset-requests-day` | Time (in seconds) until daily request limit resets |
-| `x-ratelimit-reset-tokens-minute` | Time (in seconds) until per-minute token limit resets |
-
-## Installation
-
-### Quick Install (Recommended)
-
-**Linux/macOS:**
+**1. Install** (choose one):
 ```bash
+# Linux/macOS
 curl -fsSL https://raw.githubusercontent.com/nathabonfim59/cerebras-code-monitor/main/install.sh | bash
-```
 
-**Windows (PowerShell):**
-```powershell
+# Windows (PowerShell)
 iwr -useb https://raw.githubusercontent.com/nathabonfim59/cerebras-code-monitor/main/install.ps1 | iex
 ```
 
-### Manual Download
+**2. Get your session token:**
+- Go to [cloud.cerebras.ai](https://cloud.cerebras.ai) and sign in
+- Press F12 → Application → Cookies → copy the `authjs.session-token` value
+- Set it: `export CEREBRAS_SESSION_TOKEN="your-token-here"`
+- Or save it permanently in `~/.config/cerebras-monitor/settings.yaml` (Windows: `%APPDATA%\cerebras-monitor\settings.yaml`)
 
-Download the latest release for your platform from the [releases page](https://github.com/nathabonfim59/cerebras-code-monitor/releases).
+**3. Start monitoring:**
+```bash
+cerebras-monitor
+```
+
+That's it!
+
+## What You Get
+
+- **Real-time dashboard** - See your usage update live
+- **Rate limit tracking** - Never hit unexpected limits
+- **Multi-organization support** - Switch between orgs easily
+- **Usage predictions** - Know when you'll hit your limits
+- **Token consumption monitoring** - Track every request
+- **Clean terminal interface** - Beautiful, responsive display
+
+## Coming Soon
+- Automatic request interception
+- Smart alerts and warnings
+- Historical usage trends
+- Export capabilities
+
+## Basic Usage
+
+```bash
+# Start with default settings
+cerebras-monitor
+
+# Custom refresh rate
+cerebras-monitor --refresh-rate 5
+
+# Choose organization
+cerebras-monitor --org-id your-org-id
+```
+
+<details>
+<summary>More Installation Options</summary>
+
+### Manual Download
+Download from the [releases page](https://github.com/nathabonfim59/cerebras-code-monitor/releases).
+
+### Using Go Install
+```bash
+go install github.com/nathabonfim59/cerebras-code-monitor/cmd@latest
+```
 
 ### Building from Source
-
-**Prerequisites:**
-- Go 1.24.5 or higher
-- Valid Cerebras session token
-
 ```bash
 git clone https://github.com/nathabonfim59/cerebras-code-monitor.git
 cd cerebras-code-monitor
 go build -o cerebras-monitor cmd/main.go
 ```
 
-### Using Go Install
+</details>
 
-```bash
-go install github.com/nathabonfim59/cerebras-code-monitor/cmd@latest
-```
+<details>
+<summary>Authentication Details</summary>
 
-## Usage
+### Session Cookie Authentication (Recommended)
+Provides the most accurate data and full organization access.
 
-### Authentication
+1. Log into [Cerebras Cloud](https://cloud.cerebras.ai)
+2. Extract session token from browser cookies:
+   - Open Developer Tools (F12)
+   - Go to Application → Cookies → https://cloud.cerebras.ai
+   - Copy the `authjs.session-token` value
+3. Set as environment variable or save in config file
 
-The monitor can authenticate using either a session cookie or an API key.
+**Note:** The session token is HTTP-only and must be manually copied. This tool only uses it to fetch your usage data - source code is available for inspection.
 
-#### Session Cookie Authentication (Recommended)
-
-This method provides the most accurate data for token prediction calculations:
-
-1. Log into your Cerebras Cloud account at https://cloud.cerebras.ai
-2. Extract the session token from browser cookies:
-   - Open Developer Tools (F12 or right-click → Inspect)
-   - Go to Application tab → Cookies → https://cloud.cerebras.ai
-   - Copy the value of 'authjs.session-token' cookie
-   ```
-   authjs.session-token=your-session-token-here
-   ```
-3. Set the token as an environment variable:
-   ```bash
-   export CEREBRAS_SESSION_TOKEN="your-session-token-here"
-   ```
-
-Note: The authjs.session-token cookie is HTTP-only, which prevents programmatic access. 
-You'll need to manually copy it from your browser's Developer Tools when required. 
-This token is only used to fetch your usage data from Cerebras - you can inspect the 
-source code yourself as this tool is open source.
-
-#### API Key Authentication (Alternative)
-
-You can also authenticate using a Cerebras API key, though this method has limitations:
+### API Key Authentication (Alternative)
+Limited functionality compared to session token:
 - Shows only data for that specific key
-- Cannot switch organizations
-- Less accurate for token prediction calculations
-- Minute-level data is not available
-- Each request "wastes" approximately 5 tokens as metadata is extracted from response headers
-- Requires longer monitoring intervals to minimize token consumption
-- Provides less precise monitoring compared to session token authentication
+- Cannot switch organizations  
+- Less accurate predictions
+- Each request consumes ~5 tokens for metadata
 
-To use API key authentication:
-1. Get your API key from the Cerebras dashboard
-2. Set it as an environment variable:
-   ```bash
-   export CEREBRAS_API_KEY="your-api-key-here"
-   ```
-3. Or use the login command:
-   ```bash
-   cerebras-monitor login apikey your-api-key-here
-   ```
-
-This will save the API key to your local database at `$XDG_CONFIG_HOME/cerebras-monitor/settings.yaml` (typically `~/.config/cerebras-monitor/settings.yaml`)
-
-### Basic Commands
-
+To use:
 ```bash
-# Start monitoring with default settings
-cerebras-monitor
-
-# Monitor with custom refresh rate
-cerebras-monitor --refresh-rate 5
+export CEREBRAS_API_KEY="your-api-key"
+# or
+cerebras-monitor login apikey your-api-key
 ```
 
-### Configuration Options
+</details>
+
+<details>
+<summary>Configuration Options</summary>
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| --session-token | string | "" | Cerebras session token (can be set via environment variable) |
+| --session-token | string | "" | Cerebras session token |
 | --org-id | string | "" | Organization ID to monitor |
 | --model | string | "qwen-3-coder-480b" | Model to monitor |
 | --refresh-rate | int | 10 | Data refresh rate in seconds (1-60) |
@@ -146,42 +122,40 @@ cerebras-monitor --refresh-rate 5
 | --timezone | string | auto | Timezone (auto-detected) |
 | --time-format | string | auto | Time format: 12h, 24h, or auto |
 | --theme | string | auto | Display theme: light, dark, or auto |
-| --log-level | string | INFO | Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL |
-| --log-file | path | None | Log file path |
-| --debug | flag | false | Enable debug logging |
-| --version, -v | flag | false | Show version information |
-| --clear | flag | false | Clear saved configuration |
-| --icons | string | emoji | Icon set to use: emoji or nerdfont |
+| --log-level | string | INFO | Logging level |
+| --icons | string | emoji | Icon set: emoji or nerdfont |
 
-## API Integration
+</details>
 
-The monitor makes requests to the Cerebras GraphQL endpoint:
-`https://cloud.cerebras.ai/api/graphql`
+<details>
+<summary>Understanding Cerebras Rate Limits</summary>
 
-Rate limit information is extracted from response headers:
-- Daily request limits and remaining counts
-- Per-minute token limits and remaining counts
-- Reset times for both limits
+Cerebras enforces rate limits per API key with these response headers:
 
-## Development
+| Header | Description |
+|--------|-------------|
+| `x-ratelimit-limit-requests-day` | Maximum requests per day |
+| `x-ratelimit-limit-tokens-minute` | Maximum tokens per minute |
+| `x-ratelimit-remaining-requests-day` | Requests remaining today |
+| `x-ratelimit-remaining-tokens-minute` | Tokens remaining this minute |
+| `x-ratelimit-reset-requests-day` | Daily limit reset time (seconds) |
+| `x-ratelimit-reset-tokens-minute` | Minute limit reset time (seconds) |
 
-Built with Go using spf13 libraries:
-- spf13/cobra for CLI framework
-- spf13/viper for configuration management
+</details>
 
-### Dependencies
+<details>
+<summary>Development & Contributing</summary>
 
-- github.com/spf13/cobra
-- github.com/spf13/viper
-- github.com/cli/browser
-- github.com/cli/oauth
-- github.com/cli/safeexec
-- sqlc (https://sqlc.dev) - required for database query generation
+### Built With
+- Go with spf13/cobra for CLI
+- spf13/viper for configuration
+- sqlc for database queries
+
+### Prerequisites
+- Go 1.24.5 or higher
+- sqlc (for database code generation)
 
 ### Building
-
-Before building, ensure you have sqlc installed:
-
 ```bash
 # Install sqlc
 go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
@@ -189,37 +163,34 @@ go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
 # Generate database code
 sqlc generate
 
-# Build the application
+# Build
 go build -o cerebras-monitor main.go
 ```
 
-### Release with Goreleaser
-
-To create a new release with Goreleaser:
-
-```bash
-# Create and push a new tag
-git tag -a v0.1.0 -m "v0.1.0"
-git push origin v0.1.0
-```
-
-The release will be automatically created by the GitHub Actions workflow.
-
-For testing releases locally without publishing:
-```bash
-make release-dry
-```
-
-To create a snapshot release:
-```bash
-make snapshot
-```
-
 ### Testing
-
 ```bash
 go test ./...
 ```
+
+### Release Process
+```bash
+# Create and push tag
+git tag -a v0.1.0 -m "v0.1.0"
+git push origin v0.1.0
+
+# Test locally
+make release-dry
+
+# Create snapshot
+make snapshot
+```
+
+### API Integration
+Makes requests to: `https://cloud.cerebras.ai/api/graphql`
+
+Rate limit data extracted from response headers.
+
+</details>
 
 ## License
 
@@ -227,4 +198,4 @@ MIT License
 
 ## Contributing
 
-Contributions are welcome. Please fork the repository and submit a pull request with your changes.
+Contributions welcome! Fork the repository and submit a pull request.
