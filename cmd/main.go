@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nathabonfim59/cerebras-code-monitor/internal/cmd"
+	cmdpkg "github.com/nathabonfim59/cerebras-code-monitor/internal/cmd"
 	"github.com/nathabonfim59/cerebras-code-monitor/internal/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -31,9 +31,8 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
-		// Default behavior - start monitoring
-		fmt.Println("Starting Cerebras Code - Usage Monitor...")
-		// TODO: Implement monitoring logic
+		// Default behavior - start dashboard
+		cmdpkg.DashboardCmd.Run(cmdpkg.DashboardCmd, args)
 	},
 }
 
@@ -127,13 +126,13 @@ func init() {
 	}
 
 	// Add subcommands
-	rootCmd.AddCommand(cmd.LoginCmd)
-	rootCmd.AddCommand(cmd.OrganizationsCmd)
-	rootCmd.AddCommand(cmd.QuotasCmd)
-	rootCmd.AddCommand(cmd.UsageCmd)
-	rootCmd.AddCommand(cmd.MigrationsCmd)
-	rootCmd.AddCommand(cmd.TestCmd)
-	rootCmd.AddCommand(cmd.DashboardCmd)
+	rootCmd.AddCommand(cmdpkg.LoginCmd)
+	rootCmd.AddCommand(cmdpkg.OrganizationsCmd)
+	rootCmd.AddCommand(cmdpkg.QuotasCmd)
+	rootCmd.AddCommand(cmdpkg.UsageCmd)
+	rootCmd.AddCommand(cmdpkg.MigrationsCmd)
+	rootCmd.AddCommand(cmdpkg.TestCmd)
+	rootCmd.AddCommand(cmdpkg.DashboardCmd)
 }
 
 func main() {
