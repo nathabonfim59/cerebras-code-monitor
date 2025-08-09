@@ -10,7 +10,7 @@ builds:
   - main: ./cmd/main.go
     binary: cerebras-code-monitor
     env:
-      - CGO_ENABLED=0
+      - CGO_ENABLED=1
     goos:
       - linux
       - darwin
