@@ -1,5 +1,7 @@
 # Cerebras Code Monitor
 
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/nathabonfim59/cerebras-code-monitor)](https://github.com/nathabonfim59/cerebras-code-monitor/releases)
+
 Real-time monitoring tool for Cerebras AI usage with rate limit tracking. Track your token consumption and request limits with predictions and warnings.
 
 <img width="543" height="1063" alt="image" src="https://github.com/user-attachments/assets/69fe1072-478b-48e0-86b4-a8ab2f71f1f4" />
