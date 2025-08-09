@@ -20,6 +20,10 @@ var rootCmd = &cobra.Command{
 	Use:   "cerebras-monitor",
 	Short: "A tool to monitor Cerebras AI usage",
 	Long:  "Real-time monitoring tool for Cerebras AI usage with rate limit tracking. Track your token consumption and request limits with predictions and warnings.",
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		// Migration check removed to prevent output
+		// Users should manually run migrations if needed
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		// Check if version flag is set
 		if showVersion, _ := cmd.Flags().GetBool("version"); showVersion {
@@ -47,6 +51,7 @@ func init() {
 	rootCmd.PersistentFlags().String("log-file", "", "Log file path")
 	rootCmd.PersistentFlags().Bool("debug", false, "Enable debug logging")
 	rootCmd.PersistentFlags().Bool("clear", false, "Clear saved configuration")
+	rootCmd.PersistentFlags().String("icons", "emoji", "Icon set to use: emoji or nerdfont")
 	rootCmd.PersistentFlags().BoolP("version", "v", false, "Show version information")
 
 	// Bind flags to viper
@@ -98,6 +103,10 @@ func init() {
 	if err != nil {
 		fmt.Printf("Error binding clear flag: %v\n", err)
 	}
+	err = viper.BindPFlag("icons", rootCmd.PersistentFlags().Lookup("icons"))
+	if err != nil {
+		fmt.Printf("Error binding icons flag: %v\n", err)
+	}
 	err = viper.BindPFlag("version", rootCmd.PersistentFlags().Lookup("version"))
 	if err != nil {
 		fmt.Printf("Error binding version flag: %v\n", err)
@@ -122,7 +131,9 @@ func init() {
 	rootCmd.AddCommand(cmd.OrganizationsCmd)
 	rootCmd.AddCommand(cmd.QuotasCmd)
 	rootCmd.AddCommand(cmd.UsageCmd)
+	rootCmd.AddCommand(cmd.MigrationsCmd)
 	rootCmd.AddCommand(cmd.TestCmd)
+	rootCmd.AddCommand(cmd.DashboardCmd)
 }
 
 func main() {

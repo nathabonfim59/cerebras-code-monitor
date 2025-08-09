@@ -9,10 +9,20 @@ BUILD_DIR=build
 .PHONY: all
 all: build
 
+# Generate SQL code
+.PHONY: sqlc
+sqlc:
+	sqlc generate
+
 # Build the project
 .PHONY: build
 build:
 	go build -o $(BINARY_NAME) $(MAIN_FILE)
+
+# Build the project for production
+.PHONY: build-prod
+build-prod:
+	go build -tags prod -o $(BINARY_NAME) $(MAIN_FILE)
 
 # Install dependencies
 .PHONY: deps
