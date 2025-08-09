@@ -2,8 +2,7 @@
 
 Real-time monitoring tool for Cerebras AI usage with rate limit tracking. Track your token consumption and request limits with predictions and warnings.
 
-<img width="794" height="609" alt="image" src="https://github.com/user-attachments/assets/c28a48f4-8400-4753-bf36-d280546a57a4" />
-
+<img width="543" height="1063" alt="image" src="https://github.com/user-attachments/assets/69fe1072-478b-48e0-86b4-a8ab2f71f1f4" />
 
 ## Features
 
