@@ -21,7 +21,7 @@ var DashboardCmd = &cobra.Command{
 		// Get model from configuration/viper
 		modelName := viper.GetString("model")
 		if modelName == "" {
-			modelName = "qwen-3-coder-480b"
+			modelName = "zai-glm-4.6"
 		}
 
 		// Get refresh rate from configuration/viper
