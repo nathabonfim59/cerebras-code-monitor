@@ -244,7 +244,7 @@ func TestUsageCommandModelSelection(t *testing.T) {
 			// Simulate the model selection logic from getUsageCmd
 			model := viper.GetString("model")
 			if model == "" {
-				model = "qwen-3-coder-480b"
+				model = "zai-glm-4.6"
 			}
 
 			if model != tt.expectedModel {

@@ -52,7 +52,7 @@ func TestRateLimitInfoToUsageMetrics(t *testing.T) {
 	}
 
 	orgID := "org_yc4f58xph5d2vndemvddrvww"
-	modelName := "qwen-3-coder-480b"
+	modelName := "zai-glm-4.6"
 
 	usageMetrics := rateLimit.ToUsageMetrics(orgID, modelName)
 

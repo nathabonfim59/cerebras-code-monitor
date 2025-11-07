@@ -63,7 +63,7 @@ var getUsageCmd = &cobra.Command{
 		// Get model from viper config or use default
 		model := viper.GetString("model")
 		if model == "" {
-			model = "qwen-3-coder-480b"
+			model = "zai-glm-4.6"
 		}
 
 		usageMetrics := metrics.ToUsageMetrics(orgID, model)
